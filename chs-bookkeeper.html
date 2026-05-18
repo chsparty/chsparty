@@ -307,22 +307,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     <div class="modal-sub" id="mi-sub">Record a rental or payment</div>
     <input type="hidden" id="mi-id">
     <input type="hidden" id="mi-source">
-    <div class="r2">
-      <div class="fgrp"><label class="flbl">Date</label><input type="date" class="finput" id="mi-date"></div>
-      <div class="fgrp"><label class="flbl">Rental Type</label>
-        <select class="finput" id="mi-type" onchange="onRentalTypeChange()">
-          <option value="moonwalk">&#127963; Moonwalk</option>
-          <option value="combo">&#127755; Combo (Moonwalk + Slide)</option>
-          <option value="waterslide">&#128167; Water Slide</option>
-          <option value="tent">&#9978; Tent</option>
-          <option value="tables_chairs">&#129683; Tables &amp; Chairs</option>
-          <option value="other">&#128204; Other</option>
-        </select>
+    <div class="fgrp"><label class="flbl">Date</label><input type="date" class="finput" id="mi-date"></div>
+    <div class="fgrp">
+      <label class="flbl">Equipment / Rental Items</label>
+      <div id="mi-equip-summary" onclick="toggleEquipPicker()" style="min-height:38px;border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;font-size:12.5px;color:var(--t3);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--white);transition:border .12s">
+        <span id="mi-equip-summary-txt">Tap to select equipment</span>
+        <span style="font-size:11px;color:var(--rose);font-weight:800" id="mi-equip-toggle-lbl">&#9660; Select</span>
       </div>
-    </div>
-    <div class="fgrp" id="mi-subtype-wrap" style="display:none">
-      <label class="flbl" id="mi-subtype-lbl">&#128269; Specific Item</label>
-      <select class="finput" id="mi-subtype"></select>
+      <div id="mi-equip-picker" style="display:none;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;margin-top:6px"></div>
     </div>
     <div class="fgrp"><label class="flbl">Customer Name (optional)</label><input type="text" class="finput" id="mi-customer" placeholder="e.g. Martinez Family"></div>
     <div class="r2">
@@ -821,7 +813,7 @@ function renderIncome(){
         const balDue=i.hasDeposit?Math.max(0,(i.amount||0)-(i.depositAmt||0)):0;
         return`<tr>
           <td>${fd(i.date)}</td>
-          <td><div style="display:inline-flex;align-items:flex-start;gap:5px"><span style="margin-top:2px">${rtypeI(i.rentalType||'other')}</span><div><span class="badge b-plum">${rtypeL(i.rentalType||'other')}</span>${i.rentalSubtype?`<div style="font-size:10px;color:var(--t3);font-weight:700;margin-top:3px">&#8627; ${subtypeLabel(i.rentalSubtype)}</div>`:''}</div></div></td>
+          <td><div style="display:flex;flex-wrap:wrap;gap:3px;max-width:160px">${(i.equipment&&i.equipment.length?i.equipment.map(e=>`<span class="badge b-plum">${e.label}</span>`).join(''):`<span class="badge b-plum">${rtypeI(i.rentalType||'other')} ${rtypeL(i.rentalType||'other')}${i.rentalSubtype?'<br><span style="font-size:9px">↳'+subtypeLabel(i.rentalSubtype)+'</span>':''}</span>`)}</div></td>
           <td style="color:var(--t2)">${i.customer||'—'}</td>
           <td class="fw" style="color:var(--green)">${f$(i.amount||0)}</td>
           <td>${i.hasDeposit?`<span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span>`:'—'}</td>
@@ -903,6 +895,110 @@ function subtypeLabel(k){
   return k;
 }
 
+/* ── EQUIPMENT MULTI-SELECT ── */
+let equipSelected=new Set();
+
+const EQUIP_CATS=[
+  {k:'moonwalk',    icon:'&#127963;', en:'Moonwalks',      es:'Brincolines'},
+  {k:'combo',       icon:'&#127755;', en:'Combos',         es:'Combos'},
+  {k:'waterslide',  icon:'&#128167;', en:'Water Slides',   es:'Toboganes'},
+  {k:'tent',        icon:'&#9978;',   en:'Tents',          es:'Carpas'},
+  {k:'tables_chairs',icon:'&#129683;',en:'Tables & Chairs',es:'Mesas y Sillas'},
+  {k:'other',       icon:'&#128204;', en:'Other',          es:'Otros'},
+];
+
+function renderEquipPicker(){
+  const container=document.getElementById('mi-equip-picker');
+  if(!container)return;
+  let html='';
+  EQUIP_CATS.forEach(cat=>{
+    const items=RENTAL_ITEMS[cat.k]||[];
+    if(!items.length)return;
+    const selCount=items.filter(i=>equipSelected.has(i.k)).length;
+    const catLabel=lang==='en'?cat.en:cat.es;
+    html+=`<div>
+      <div onclick="toggleEquipCat('${cat.k}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--cream);cursor:pointer;border-bottom:1px solid var(--border);user-select:none">
+        <span style="font-size:12.5px;font-weight:800;color:var(--plum)">${cat.icon} ${catLabel}${selCount>0?` <span style="color:var(--rose)">(${selCount})</span>`:''}</span>
+        <span style="font-size:11px;color:var(--t3)" id="ecat-arrow-${cat.k}">&#9660;</span>
+      </div>
+      <div id="ecat-${cat.k}" style="display:none">
+        ${items.map(item=>{
+          const checked=equipSelected.has(item.k);
+          const label=lang==='en'?item.en:item.es;
+          return `<label style="display:flex;align-items:center;gap:11px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--rose-p);background:${checked?'var(--rose-l)':'var(--white)'};transition:background .1s">
+            <input type="checkbox" value="${item.k}" ${checked?'checked':''} onchange="toggleEquipItem('${item.k}','${cat.k}')" style="width:18px;height:18px;accent-color:var(--rose);cursor:pointer;flex-shrink:0">
+            <span style="font-size:13px;font-weight:${checked?'800':'600'};color:${checked?'var(--rose-d)':'var(--plum)'}">${label}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  container.innerHTML=html;
+}
+
+function toggleEquipCat(k){
+  const el=document.getElementById('ecat-'+k);
+  const arrow=document.getElementById('ecat-arrow-'+k);
+  if(!el)return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(arrow)arrow.innerHTML=open?'&#9660;':'&#9650;';
+}
+
+function toggleEquipItem(k,catK){
+  if(equipSelected.has(k))equipSelected.delete(k);
+  else equipSelected.add(k);
+  updateEquipSummary();
+  renderEquipPicker();
+  // Keep the category open after toggle
+  const el=document.getElementById('ecat-'+catK);
+  if(el)el.style.display='block';
+  const arrow=document.getElementById('ecat-arrow-'+catK);
+  if(arrow)arrow.innerHTML='&#9650;';
+}
+
+function updateEquipSummary(){
+  const txt=document.getElementById('mi-equip-summary-txt');
+  const lbl=document.getElementById('mi-equip-toggle-lbl');
+  const summary=document.getElementById('mi-equip-summary');
+  if(!txt)return;
+  if(equipSelected.size===0){
+    txt.textContent=lang==='en'?'Tap to select equipment':'Toca para seleccionar equipo';
+    txt.style.color='var(--t3)';
+    if(lbl)lbl.innerHTML='&#9660; '+(lang==='en'?'Select':'Seleccionar');
+    if(summary)summary.style.borderColor='var(--border)';
+  }else{
+    const labels=[...equipSelected].map(k=>subtypeLabel(k));
+    txt.textContent=labels.join(' + ');
+    txt.style.color='var(--plum)';
+    txt.style.fontWeight='700';
+    if(lbl)lbl.innerHTML='&#9650; '+(lang==='en'?'Done':'Listo');
+    if(summary)summary.style.borderColor='var(--rose)';
+  }
+}
+
+function toggleEquipPicker(){
+  const el=document.getElementById('mi-equip-picker');
+  if(!el)return;
+  if(el.style.display==='none'){
+    renderEquipPicker();
+    el.style.display='block';
+    document.getElementById('mi-equip-toggle-lbl').innerHTML='&#9650; '+(lang==='en'?'Done':'Listo');
+  } else {
+    el.style.display='none';
+    document.getElementById('mi-equip-toggle-lbl').innerHTML='&#9660; '+(lang==='en'?'Select':'Seleccionar');
+  }
+}
+
+function getPrimaryRentalType(){
+  if(equipSelected.size===0)return'other';
+  const first=[...equipSelected][0];
+  for(const[cat,items] of Object.entries(RENTAL_ITEMS)){
+    if(items.find(i=>i.k===first))return cat;
+  }
+  return'other';
+}
+
 function toggleDepositBox(){
   const show=document.getElementById('mi-has-deposit').checked;
   document.getElementById('deposit-box').style.display=show?'block':'none';
@@ -920,12 +1016,13 @@ function openIncomeModal(id,src){
     document.getElementById('mi-id').value='';
     document.getElementById('mi-source').value='manual';
     document.getElementById('mi-date').value=today();
-    document.getElementById('mi-type').value='moonwalk';
+    equipSelected.clear();
     document.getElementById('mi-customer').value='';
     document.getElementById('mi-amt').value='';
     document.getElementById('mi-status').value='collected';
     document.getElementById('mi-notes').value='';
-    onRentalTypeChange();
+    updateEquipSummary();
+    document.getElementById('mi-equip-picker').style.display='none';
   } else if(src==='manual'){
     const i=fbIncome.find(x=>x.id===id); if(!i)return;
     document.getElementById('mi-title').textContent=lang==='en'?'Edit Income':'Editar Ingreso';
@@ -933,13 +1030,15 @@ function openIncomeModal(id,src){
     document.getElementById('mi-id').value=id;
     document.getElementById('mi-source').value='manual';
     document.getElementById('mi-date').value=i.date||'';
-    document.getElementById('mi-type').value=i.rentalType||'moonwalk';
+    equipSelected.clear();
+    if(i.equipment&&i.equipment.length)i.equipment.forEach(e=>equipSelected.add(e.k));
+    else if(i.rentalSubtype)equipSelected.add(i.rentalSubtype);
     document.getElementById('mi-customer').value=i.customer||'';
     document.getElementById('mi-amt').value=i.amount||'';
     document.getElementById('mi-status').value=i.status||'collected';
     document.getElementById('mi-notes').value=i.notes||'';
-    onRentalTypeChange();
-    if(i.rentalSubtype)document.getElementById('mi-subtype').value=i.rentalSubtype;
+    updateEquipSummary();
+    document.getElementById('mi-equip-picker').style.display='none';
     if(i.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=i.depositAmt||'';}
   } else if(src==='tracker'){
     const r=fbRentals.find(x=>x.id===id); if(!r)return;
@@ -949,13 +1048,15 @@ function openIncomeModal(id,src){
     document.getElementById('mi-id').value=id;
     document.getElementById('mi-source').value='tracker';
     document.getElementById('mi-date').value=e.date||r.date||'';
-    document.getElementById('mi-type').value=e.rentalType||'other';
+    equipSelected.clear();
+    if(e.equipment&&e.equipment.length)e.equipment.forEach(eq=>equipSelected.add(eq.k));
+    else if(e.rentalSubtype)equipSelected.add(e.rentalSubtype);
     document.getElementById('mi-customer').value=e.customer||r.name||'';
     document.getElementById('mi-amt').value=e.amount!==undefined?e.amount:(r.quote||'');
     document.getElementById('mi-status').value=e.status||'collected';
     document.getElementById('mi-notes').value=e.notes||'';
-    onRentalTypeChange();
-    if(e.rentalSubtype)document.getElementById('mi-subtype').value=e.rentalSubtype;
+    updateEquipSummary();
+    document.getElementById('mi-equip-picker').style.display='none';
     if(e.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=e.depositAmt||'';}
   }
   openModal('m-income');
@@ -965,8 +1066,9 @@ function saveIncome(){
   const id=document.getElementById('mi-id').value;
   const src=document.getElementById('mi-source').value;
   const date=document.getElementById('mi-date').value;
-  const rentalType=document.getElementById('mi-type').value;
-  const rentalSubtype=document.getElementById('mi-subtype')?.value||'';
+  const rentalType=getPrimaryRentalType();
+  const rentalSubtype=[...equipSelected][0]||'';
+  const equipment=[...equipSelected].map(k=>({k,label:subtypeLabel(k)}));
   const customer=document.getElementById('mi-customer').value.trim();
   const amount=parseFloat(document.getElementById('mi-amt').value)||0;
   const status=document.getElementById('mi-status').value;
@@ -974,10 +1076,11 @@ function saveIncome(){
   const hasDeposit=document.getElementById('mi-has-deposit').checked;
   const depositAmt=hasDeposit?parseFloat(document.getElementById('mi-deposit').value)||0:0;
   if(!date||!amount){alert(lang==='en'?'Please fill in date and amount.':'Completa fecha y cantidad.');return;}
+  if(!equipment.length){alert(lang==='en'?'Please select at least one equipment item.':'Selecciona al menos un artículo.');return;}
   if(src==='tracker'){
-    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,customer,status,notes,hasDeposit,depositAmt,editedAt:today()};
+    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,equipment,customer,status,notes,hasDeposit,depositAmt,editedAt:today()};
   } else {
-    const entry={id:id||uid(),date,rentalType,rentalSubtype,customer,amount,status,notes,hasDeposit,depositAmt};
+    const entry={id:id||uid(),date,rentalType,rentalSubtype,equipment,customer,amount,status,notes,hasDeposit,depositAmt};
     if(id){const idx=fbIncome.findIndex(x=>x.id===id);if(idx>=0)fbIncome[idx]=entry;}
     else fbIncome.push(entry);
   }
