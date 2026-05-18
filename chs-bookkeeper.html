@@ -321,9 +321,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div class="fgrp"><label class="flbl">Total Quote / Amount ($)</label><input type="number" class="finput" id="mi-amt" min="0" step="0.01" placeholder="0.00"></div>
       <div class="fgrp"><label class="flbl">Status</label>
         <select class="finput" id="mi-status">
-          <option value="collected">&#10003; Collected</option>
-          <option value="partial">&#9900; Partial</option>
-          <option value="pending">&#9711; Pending</option>
+          <option value="collected">&#10003; Collected — Fully Paid</option>
+          <option value="partial">&#9900; Partial — Deposit Only</option>
         </select>
       </div>
     </div>
@@ -460,7 +459,7 @@ const TX = {
     noIncome:"No income entries yet.",
     rentalTypes:{moonwalk:"Moonwalk",combo:"Combo",waterslide:"Water Slide",tent:"Tent",tables_chairs:"Tables & Chairs",other:"Other"},
     rentalIcons:{moonwalk:"&#127963;",combo:"&#127755;",waterslide:"&#128167;",tent:"&#9978;",tables_chairs:"&#129683;",other:"&#128204;"},
-    statusLabels:{collected:"Collected",partial:"Partial",pending:"Pending"},
+    statusLabels:{collected:"Collected",partial:"Partial — Deposit Only"},
     incomeSource:{tracker:"Tracker",manual:"Manual"},
     depositLabel:"Deposit", balanceDue:"Balance Due",
     addExpense:"+ Add Expense", date:"Date", vendor:"Vendor", desc:"Description", cat:"Category", amount:"Amount",
@@ -508,7 +507,7 @@ const TX = {
     noIncome:"Sin entradas de ingresos.",
     rentalTypes:{moonwalk:"Moonwalk",combo:"Combo",waterslide:"Tobogán Agua",tent:"Carpa",tables_chairs:"Mesas y Sillas",other:"Otro"},
     rentalIcons:{moonwalk:"&#127963;",combo:"&#127755;",waterslide:"&#128167;",tent:"&#9978;",tables_chairs:"&#129683;",other:"&#128204;"},
-    statusLabels:{collected:"Cobrado",partial:"Parcial",pending:"Pendiente"},
+    statusLabels:{collected:"Cobrado",partial:"Parcial — Solo Depósito"},
     incomeSource:{tracker:"Tracker",manual:"Manual"},
     depositLabel:"Depósito", balanceDue:"Balance Pendiente",
     addExpense:"+ Agregar Gasto", date:"Fecha", vendor:"Vendedor", desc:"Descripción", cat:"Categoría", amount:"Cantidad",
@@ -697,7 +696,7 @@ function statusBadge(s){
   const t=TX[lang];
   if(s==='collected')return`<span class="badge b-green">&#10003; ${t.statusLabels.collected}</span>`;
   if(s==='partial')return`<span class="badge b-gold">&#9900; ${t.statusLabels.partial}</span>`;
-  return`<span class="badge b-rose">&#9711; ${t.statusLabels.pending}</span>`;
+  return`<span class="badge b-green">&#10003; ${t.statusLabels.collected}</span>`;
 }
 function srcBadge(s){
   const t=TX[lang];
@@ -800,6 +799,14 @@ function renderDash(){
 }
 
 /* ── INCOME (UNIFIED) ── */
+async function syncIncome(){
+  const btn=document.getElementById('sync-income-btn');
+  if(btn){btn.textContent='&#8987;';btn.disabled=true;}
+  await loadAll();
+  if(btn){btn.textContent='&#128260;';btn.disabled=false;}
+  go('income');
+}
+
 function depMethodLabel(m){
   const map={cash:'&#128181; Cash',cashapp:'&#128241; Cash App',zelle:'&#128153; Zelle',applepay:'&#127822; Apple Pay'};
   return m?map[m]||m:'';
@@ -819,7 +826,10 @@ function renderIncome(){
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
       ${fTypes.map(f=>`<button class="btn btn-sm ${incFilter.type===f?'btn-rose':'btn-ghost'}" onclick="setIncFilter('${f}')">${fLabels[f]}</button>`).join('')}
     </div>
-    <button class="btn btn-rose" onclick="openIncomeModal(null)">&#128181; ${t.addIncome}</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn btn-ghost" id="sync-income-btn" onclick="syncIncome()" title="${lang==='en'?'Refresh data':'Actualizar datos'}" style="font-size:18px;padding:8px 12px">&#128260;</button>
+      <button class="btn btn-rose" onclick="openIncomeModal(null)">&#128181; ${t.addIncome}</button>
+    </div>
   </div>
 
   ${incFilter.type==='custom'?`
@@ -1223,7 +1233,7 @@ function saveIncome(){
   const src=document.getElementById('mi-source').value;
   const date=document.getElementById('mi-date').value;
   const rentalType=getPrimaryRentalType();
-  const rentalSubtype=[...equipSelected][0]||'';
+  const rentalSubtype=[...equipSelected.keys()][0]||'';
   const equipment=[...equipSelected.entries()].map(([k,qty])=>({k,qty,label:qty>1?subtypeLabel(k)+' x'+qty:subtypeLabel(k)}));
   const customer=document.getElementById('mi-customer').value.trim();
   const amount=parseFloat(document.getElementById('mi-amt').value)||0;
