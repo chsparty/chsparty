@@ -909,10 +909,10 @@ function renderIncome(){
           <td><div style="display:flex;flex-wrap:wrap;gap:3px;max-width:160px">${(i.equipment&&i.equipment.length?i.equipment.map(e=>`<span class="badge b-plum">${e.label}</span>`).join(''):`<span class="badge b-plum">${rtypeI(i.rentalType||'other')} ${rtypeL(i.rentalType||'other')}${i.rentalSubtype?'<br><span style="font-size:9px">↳'+subtypeLabel(i.rentalSubtype)+'</span>':''}</span>`)}</div></td>
           <td style="color:var(--t2)">${i.customer||'—'}</td>
           <td class="fw" style="color:var(--green)">${f$(i.amount||0)}</td>
-          <td>${i.hasDeposit?`<div><span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.depositMethod)+(i.depositDate?' · '+dateDisplay(i.depositDate):'')}</div></div>`:'—'}</td>
+          <td>${i.hasDeposit?`<div><span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.depositMethod)+(i.depositDate?' · '+fd(i.depositDate):'')}</div></div>`:'—'}</td>
           <td>${(()=>{
             if(!i.hasDeposit)return'<span style="color:var(--t3)">—</span>';
-            if(i.balancePaid)return`<div><span class="fw c-green">&#10003; Paid ${f$(i.balanceAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.balanceMethod)}${i.balancePaidDate?' · '+dateDisplay(i.balancePaidDate):''}${i.balancePaidOnDelivery?' · &#128666;':''}</div></div>`;
+            if(i.balancePaid)return`<div><span class="fw c-green">&#10003; Paid ${f$(i.balanceAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.balanceMethod)}${i.balancePaidDate?' · '+fd(i.balancePaidDate):''}${i.balancePaidOnDelivery?' · &#128666;':''}</div></div>`;
             const fut=(i.date||'')>=today();
             if(!fut)return'<span style="color:var(--t3)">—</span>';
             return balDue>0?`<span class="fw" style="color:var(--gold)">${f$(balDue)}</span>`:'<span class="fw c-green">Paid ✓</span>';
