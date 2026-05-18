@@ -348,7 +348,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;heigh
     <div class="r2">
       <div class="fgrp"><label class="flbl">Date</label><input type="date" class="finput" id="mi-date"></div>
       <div class="fgrp"><label class="flbl">Rental Type</label>
-        <select class="finput" id="mi-type">
+        <select class="finput" id="mi-type" onchange="onRentalTypeChange()">
           <option value="moonwalk">&#127963; Moonwalk</option>
           <option value="combo">&#127755; Combo</option>
           <option value="waterslide">&#128167; Water Slide</option>
@@ -357,6 +357,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;heigh
           <option value="other">&#128204; Other</option>
         </select>
       </div>
+    </div>
+    <div class="fgrp" id="mi-subtype-wrap" style="display:none">
+      <label class="flbl" id="mi-subtype-lbl">&#128269; Specific Item</label>
+      <select class="finput" id="mi-subtype"></select>
     </div>
     <div class="fgrp"><label class="flbl">Customer Name (optional)</label><input type="text" class="finput" id="mi-customer" placeholder="e.g. Martinez Family"></div>
     <div class="r2">
@@ -857,7 +861,7 @@ function renderIncome(){
         const balDue=i.hasDeposit?Math.max(0,(i.amount||0)-(i.depositAmt||0)):0;
         return`<tr>
           <td>${fd(i.date)}</td>
-          <td><span style="display:inline-flex;align-items:center;gap:5px"><span>${rtypeI(i.rentalType||'other')}</span><span class="badge b-plum">${rtypeL(i.rentalType||'other')}</span></span></td>
+          <td><div style="display:inline-flex;align-items:flex-start;gap:5px"><span style="margin-top:2px">${rtypeI(i.rentalType||'other')}</span><div><span class="badge b-plum">${rtypeL(i.rentalType||'other')}</span>${i.rentalSubtype?`<div style="font-size:10px;color:var(--t3);font-weight:700;margin-top:3px">&#8627; ${subtypeLabel(i.rentalSubtype)}</div>`:''}</div></div></td>
           <td style="color:var(--t2)">${i.customer||'—'}</td>
           <td class="fw" style="color:var(--green)">${f$(i.amount||0)}</td>
           <td>${i.hasDeposit?`<span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span>`:'—'}</td>
@@ -873,6 +877,70 @@ function renderIncome(){
       </tbody>
     </table></div>`}
   </div>`;
+}
+
+/* ── RENTAL ITEMS (mirrors tracker inventory) ── */
+const RENTAL_ITEMS={
+  moonwalk:[
+    {k:'mw_monkey',    en:'Monkey Moonwalk',            es:'Brincolin Mono'},
+    {k:'mw_rb_castle', en:'Red & Blue Castle Moonwalk', es:'Brincolin Castillo Rojo/Azul'},
+    {k:'mw_blue_pointy',en:'Blue Pointy Castle Moonwalk',es:'Brincolin Castillo Azul Puntas'},
+    {k:'mw_pink',      en:'Pink Short Moonwalk',        es:'Brincolin Rosa Corto'},
+    {k:'mw_purple',    en:'Purple Castle Moonwalk',     es:'Brincolin Castillo Morado'},
+  ],
+  combo:[
+    {k:'combo_red',    en:'Red Combo',    es:'Combo Rojo'},
+    {k:'combo_orange', en:'Orange Combo', es:'Combo Naranja'},
+  ],
+  waterslide:[
+    {k:'slide_red20',    en:"20' Red Double Water Slide", es:"Tobogán 20' Rojo Doble"},
+    {k:'slide_purple20', en:"20' Purple Waterslide",      es:"Tobogán 20' Morado"},
+    {k:'slide_palm20',   en:"20' Palm Waterslide",        es:"Tobogán 20' Palma"},
+    {k:'slide_pink20',   en:"20' Pink Waterslide",        es:"Tobogán 20' Rosa"},
+    {k:'slide_palm13',   en:"13' Palm Waterslide",        es:"Tobogán 13' Palma"},
+    {k:'slide_blue13',   en:"13' Blue Waterslide",        es:"Tobogán 13' Azul"},
+  ],
+  tent:[
+    {k:'tent_20x20', en:'Party Tent 20x20', es:'Carpa 20x20'},
+    {k:'tent_20x40', en:'Party Tent 20x40', es:'Carpa 20x40'},
+    {k:'tent_40x40', en:'Party Tent 40x40', es:'Carpa 40x40'},
+  ],
+  tables_chairs:[
+    {k:'chair_white',        en:'White Plastic Chairs',    es:'Sillas Plásticas Blancas'},
+    {k:'chair_black',        en:'Black Metal Chairs',      es:'Sillas Metálicas Negras'},
+    {k:'table_6ft',          en:'6ft Tables',              es:'Mesas 6 pies'},
+    {k:'table_8ft',          en:'8ft Tables',              es:'Mesas 8 pies'},
+    {k:'tables_chairs_mixed',en:'Tables & Chairs (Mixed)', es:'Mesas y Sillas (Mixto)'},
+  ],
+  other:[
+    {k:'margarita',    en:'Margarita Machine', es:'Máquina Margarita'},
+    {k:'other_custom', en:'Other / Custom',    es:'Otro / Personalizado'},
+  ],
+};
+
+function onRentalTypeChange(){
+  const type=document.getElementById('mi-type')?.value;
+  const wrap=document.getElementById('mi-subtype-wrap');
+  const sel=document.getElementById('mi-subtype');
+  const lbl=document.getElementById('mi-subtype-lbl');
+  if(!wrap||!sel)return;
+  const items=RENTAL_ITEMS[type]||[];
+  if(items.length){
+    if(lbl)lbl.textContent=lang==='en'?'🔍 Specific Item':'🔍 Artículo Específico';
+    sel.innerHTML=items.map(i=>`<option value="${i.k}">${lang==='en'?i.en:i.es}</option>`).join('');
+    wrap.style.display='block';
+  } else {
+    wrap.style.display='none';
+  }
+}
+
+function subtypeLabel(k){
+  if(!k)return'';
+  for(const cat of Object.values(RENTAL_ITEMS)){
+    const item=cat.find(i=>i.k===k);
+    if(item)return lang==='en'?item.en:item.es;
+  }
+  return k;
 }
 
 function toggleDepositBox(){
@@ -897,6 +965,7 @@ function openIncomeModal(id,src){
     document.getElementById('mi-amt').value='';
     document.getElementById('mi-status').value='collected';
     document.getElementById('mi-notes').value='';
+    onRentalTypeChange();
   } else if(src==='manual'){
     const i=fbIncome.find(x=>x.id===id); if(!i)return;
     document.getElementById('mi-title').textContent=lang==='en'?'Edit Income':'Editar Ingreso';
@@ -909,6 +978,8 @@ function openIncomeModal(id,src){
     document.getElementById('mi-amt').value=i.amount||'';
     document.getElementById('mi-status').value=i.status||'collected';
     document.getElementById('mi-notes').value=i.notes||'';
+    onRentalTypeChange();
+    if(i.rentalSubtype)document.getElementById('mi-subtype').value=i.rentalSubtype;
     if(i.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=i.depositAmt||'';}
   } else if(src==='tracker'){
     const r=fbRentals.find(x=>x.id===id); if(!r)return;
@@ -923,6 +994,8 @@ function openIncomeModal(id,src){
     document.getElementById('mi-amt').value=e.amount!==undefined?e.amount:(r.quote||'');
     document.getElementById('mi-status').value=e.status||'collected';
     document.getElementById('mi-notes').value=e.notes||'';
+    onRentalTypeChange();
+    if(e.rentalSubtype)document.getElementById('mi-subtype').value=e.rentalSubtype;
     if(e.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=e.depositAmt||'';}
   }
   openModal('m-income');
@@ -933,6 +1006,7 @@ function saveIncome(){
   const src=document.getElementById('mi-source').value;
   const date=document.getElementById('mi-date').value;
   const rentalType=document.getElementById('mi-type').value;
+  const rentalSubtype=document.getElementById('mi-subtype')?.value||'';
   const customer=document.getElementById('mi-customer').value.trim();
   const amount=parseFloat(document.getElementById('mi-amt').value)||0;
   const status=document.getElementById('mi-status').value;
@@ -941,9 +1015,9 @@ function saveIncome(){
   const depositAmt=hasDeposit?parseFloat(document.getElementById('mi-deposit').value)||0:0;
   if(!date||!amount){alert(lang==='en'?'Please fill in date and amount.':'Completa fecha y cantidad.');return;}
   if(src==='tracker'){
-    fbRentalEdits[id]={amount,date,rentalType,customer,status,notes,hasDeposit,depositAmt,editedAt:today()};
+    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,customer,status,notes,hasDeposit,depositAmt,editedAt:today()};
   } else {
-    const entry={id:id||uid(),date,rentalType,customer,amount,status,notes,hasDeposit,depositAmt};
+    const entry={id:id||uid(),date,rentalType,rentalSubtype,customer,amount,status,notes,hasDeposit,depositAmt};
     if(id){const idx=fbIncome.findIndex(x=>x.id===id);if(idx>=0)fbIncome[idx]=entry;}
     else fbIncome.push(entry);
   }
