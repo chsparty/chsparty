@@ -346,6 +346,31 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
         </select>
       </div>
     </div>
+    <!-- BALANCE PAYMENT SECTION -->
+    <div id="balance-payment-wrap" style="display:none;margin-top:2px">
+      <div class="toggle-row" style="padding:8px 0 4px">
+        <span class="toggle-lbl">&#128176; Remaining balance collected?</span>
+        <label class="toggle"><input type="checkbox" id="mi-bal-paid" onchange="toggleBalancePayment()"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="balance-payment-box" style="display:none;background:rgba(26,171,109,0.05);border:1.5px solid rgba(26,171,109,0.3);border-radius:12px;padding:14px;margin-bottom:8px">
+        <div class="r2">
+          <div class="fgrp"><label class="flbl" style="color:#0d8a55">Amount Collected ($)</label><input type="number" class="finput" id="mi-bal-amt" min="0" step="0.01" placeholder="0.00" style="border-color:rgba(26,171,109,0.3)"></div>
+          <div class="fgrp"><label class="flbl" style="color:#0d8a55">Date Paid</label><input type="date" class="finput" id="mi-bal-date" style="border-color:rgba(26,171,109,0.3)"></div>
+        </div>
+        <div class="fgrp"><label class="flbl" style="color:#0d8a55">Payment Method</label>
+          <select class="finput" id="mi-bal-method" style="border-color:rgba(26,171,109,0.3)">
+            <option value="cash">&#128181; Cash</option>
+            <option value="cashapp">&#128241; Cash App</option>
+            <option value="zelle">&#128153; Zelle</option>
+            <option value="applepay">&#127822; Apple Pay</option>
+          </select>
+        </div>
+        <div class="toggle-row" style="padding:4px 0 0">
+          <span class="toggle-lbl" style="font-size:12.5px;color:var(--t2)">&#128666; Paid on delivery?</span>
+          <label class="toggle"><input type="checkbox" id="mi-bal-delivery"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+    </div>
     <div class="fgrp" style="margin-top:8px"><label class="flbl">Notes</label><input type="text" class="finput" id="mi-notes" placeholder="e.g. 3-hour rental, delivery to Crosby"></div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('m-income')">Cancel</button>
@@ -648,7 +673,11 @@ function deleteTrackerEntry(id){
 
 /* Income for month calculation */
 function incomeForMonth(m){
-  const manualAmt=fbIncome.filter(i=>mk(i.date)===m).reduce((s,i)=>s+(i.hasDeposit?(i.depositAmt||0):i.amount||0),0);
+  const manualAmt=fbIncome.filter(i=>mk(i.date)===m).reduce((s,i)=>{
+    if(!i.hasDeposit)return s+(i.amount||0);
+    if(i.balancePaid)return s+(i.depositAmt||0)+(i.balanceAmt||0);
+    return s+(i.depositAmt||0);
+  },0);
   // For tracker rentals, use collected amount (deposit if partial, full if collected)
   const trackerAmt=fbRentals.filter(r=>r.date&&mk(r.date)===m).reduce((s,r)=>{
     const e=fbRentalEdits[r.id]||{};
@@ -779,7 +808,7 @@ function renderIncome(){
   const t=TX[lang];
   const all=getAllIncome();
   const filtered=filterIncome(all);
-  const totalFiltered=filtered.reduce((s,i)=>s+(i.hasDeposit?i.depositAmt||0:i.amount||0),0);
+  const totalFiltered=filtered.reduce((s,i)=>!i.hasDeposit?s+(i.amount||0):i.balancePaid?s+(i.depositAmt||0)+(i.balanceAmt||0):s+(i.depositAmt||0),0);
 
   // Build filter label
   const fLabels={week:lang==='en'?'This Week':'Esta Semana',month:lang==='en'?'This Month':'Este Mes',year:lang==='en'?'This Year':'Este Año',all:lang==='en'?'All Time':'Todo',custom:lang==='en'?'Custom':'Personalizado'};
@@ -831,7 +860,13 @@ function renderIncome(){
           <td style="color:var(--t2)">${i.customer||'—'}</td>
           <td class="fw" style="color:var(--green)">${f$(i.amount||0)}</td>
           <td>${i.hasDeposit?`<div><span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.depositMethod)+(i.depositDate?' · '+dateDisplay(i.depositDate):'')}</div></div>`:'—'}</td>
-          <td>${(()=>{const fut=(i.date||'')>=today();if(!fut||!i.hasDeposit)return'<span style="color:var(--t3)">—</span>';return balDue>0?`<span class="fw" style="color:var(--gold)">${f$(balDue)}</span>`:'<span class="fw c-green">Paid ✓</span>';})()}</td>
+          <td>${(()=>{
+            if(!i.hasDeposit)return'<span style="color:var(--t3)">—</span>';
+            if(i.balancePaid)return`<div><span class="fw c-green">&#10003; Paid ${f$(i.balanceAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.balanceMethod)}${i.balancePaidDate?' · '+dateDisplay(i.balancePaidDate):''}${i.balancePaidOnDelivery?' · &#128666;':''}</div></div>`;
+            const fut=(i.date||'')>=today();
+            if(!fut)return'<span style="color:var(--t3)">—</span>';
+            return balDue>0?`<span class="fw" style="color:var(--gold)">${f$(balDue)}</span>`:'<span class="fw c-green">Paid ✓</span>';
+          })()}</td>
           <td>${statusBadge(i.status||'collected')}</td>
           <td>${srcBadge(i._src)}</td>
           <td style="display:flex;gap:5px;flex-wrap:nowrap">
@@ -1060,6 +1095,30 @@ function getPrimaryRentalType(){
 function toggleDepositBox(){
   const show=document.getElementById('mi-has-deposit').checked;
   document.getElementById('deposit-box').style.display=show?'block':'none';
+  const bwrap=document.getElementById('balance-payment-wrap');
+  if(bwrap)bwrap.style.display=show?'block':'none';
+  if(!show){
+    const bbox=document.getElementById('balance-payment-box');
+    if(bbox)bbox.style.display='none';
+    const bc=document.getElementById('mi-bal-paid');
+    if(bc)bc.checked=false;
+  }
+}
+
+function toggleBalancePayment(){
+  const show=document.getElementById('mi-bal-paid').checked;
+  const bbox=document.getElementById('balance-payment-box');
+  if(bbox)bbox.style.display=show?'block':'none';
+  if(show){
+    // Auto-fill remaining balance
+    const total=parseFloat(document.getElementById('mi-amt')?.value)||0;
+    const dep=parseFloat(document.getElementById('mi-deposit')?.value)||0;
+    const remaining=Math.max(0,total-dep);
+    const balAmt=document.getElementById('mi-bal-amt');
+    if(balAmt&&!balAmt.value&&remaining>0)balAmt.value=remaining.toFixed(2);
+    const balDate=document.getElementById('mi-bal-date');
+    if(balDate&&!balDate.value)balDate.value=today();
+  }
 }
 
 function openIncomeModal(id,src){
@@ -1069,6 +1128,13 @@ function openIncomeModal(id,src){
   document.getElementById('mi-deposit').value='';
   if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=today();
   if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value='cash';
+  const _bwrap=document.getElementById('balance-payment-wrap');if(_bwrap)_bwrap.style.display='none';
+  const _bbox=document.getElementById('balance-payment-box');if(_bbox)_bbox.style.display='none';
+  const _bpaid=document.getElementById('mi-bal-paid');if(_bpaid)_bpaid.checked=false;
+  const _bamt=document.getElementById('mi-bal-amt');if(_bamt)_bamt.value='';
+  const _bdate=document.getElementById('mi-bal-date');if(_bdate)_bdate.value='';
+  const _bmethod=document.getElementById('mi-bal-method');if(_bmethod)_bmethod.value='cash';
+  const _bdel=document.getElementById('mi-bal-delivery');if(_bdel)_bdel.checked=false;
   if(!id){
     // New entry
     document.getElementById('mi-title').textContent=lang==='en'?'Add Income':'Agregar Ingreso';
@@ -1099,7 +1165,22 @@ function openIncomeModal(id,src){
     document.getElementById('mi-notes').value=i.notes||'';
     updateEquipSummary();
     document.getElementById('mi-equip-picker').style.display='none';
-    if(i.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=i.depositAmt||'';if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=i.depositDate||'';if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value=i.depositMethod||'cash';}
+    if(i.hasDeposit){
+      document.getElementById('mi-has-deposit').checked=true;
+      document.getElementById('deposit-box').style.display='block';
+      document.getElementById('mi-deposit').value=i.depositAmt||'';
+      if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=i.depositDate||'';
+      if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value=i.depositMethod||'cash';
+      const _bwM=document.getElementById('balance-payment-wrap');if(_bwM)_bwM.style.display='block';
+      if(i.balancePaid){
+        const _bc=document.getElementById('mi-bal-paid');if(_bc)_bc.checked=true;
+        const _bb=document.getElementById('balance-payment-box');if(_bb)_bb.style.display='block';
+        const _ba=document.getElementById('mi-bal-amt');if(_ba)_ba.value=i.balanceAmt||'';
+        const _bd=document.getElementById('mi-bal-date');if(_bd)_bd.value=i.balancePaidDate||'';
+        const _bm=document.getElementById('mi-bal-method');if(_bm)_bm.value=i.balanceMethod||'cash';
+        const _bdl=document.getElementById('mi-bal-delivery');if(_bdl)_bdl.checked=i.balancePaidOnDelivery||false;
+      }
+    }
   } else if(src==='tracker'){
     const r=fbRentals.find(x=>x.id===id); if(!r)return;
     const e=fbRentalEdits[id]||{};
@@ -1117,7 +1198,22 @@ function openIncomeModal(id,src){
     document.getElementById('mi-notes').value=e.notes||'';
     updateEquipSummary();
     document.getElementById('mi-equip-picker').style.display='none';
-    if(e.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=e.depositAmt||'';if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=e.depositDate||'';if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value=e.depositMethod||'cash';}
+    if(e.hasDeposit){
+      document.getElementById('mi-has-deposit').checked=true;
+      document.getElementById('deposit-box').style.display='block';
+      document.getElementById('mi-deposit').value=e.depositAmt||'';
+      if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=e.depositDate||'';
+      if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value=e.depositMethod||'cash';
+      const _bwT=document.getElementById('balance-payment-wrap');if(_bwT)_bwT.style.display='block';
+      if(e.balancePaid){
+        const _bc=document.getElementById('mi-bal-paid');if(_bc)_bc.checked=true;
+        const _bb=document.getElementById('balance-payment-box');if(_bb)_bb.style.display='block';
+        const _ba=document.getElementById('mi-bal-amt');if(_ba)_ba.value=e.balanceAmt||'';
+        const _bd=document.getElementById('mi-bal-date');if(_bd)_bd.value=e.balancePaidDate||'';
+        const _bm=document.getElementById('mi-bal-method');if(_bm)_bm.value=e.balanceMethod||'cash';
+        const _bdl=document.getElementById('mi-bal-delivery');if(_bdl)_bdl.checked=e.balancePaidOnDelivery||false;
+      }
+    }
   }
   openModal('m-income');
 }
@@ -1137,12 +1233,17 @@ function saveIncome(){
   const depositAmt=hasDeposit?parseFloat(document.getElementById('mi-deposit').value)||0:0;
   const depositDate=hasDeposit?(document.getElementById('mi-dep-date')?.value||''):'';
   const depositMethod=hasDeposit?(document.getElementById('mi-dep-method')?.value||'cash'):'';
+  const balancePaid=hasDeposit&&(document.getElementById('mi-bal-paid')?.checked||false);
+  const balanceAmt=balancePaid?(parseFloat(document.getElementById('mi-bal-amt')?.value)||0):0;
+  const balancePaidDate=balancePaid?(document.getElementById('mi-bal-date')?.value||''):'';
+  const balanceMethod=balancePaid?(document.getElementById('mi-bal-method')?.value||'cash'):'';
+  const balancePaidOnDelivery=balancePaid&&(document.getElementById('mi-bal-delivery')?.checked||false);
   if(!date||!amount){alert(lang==='en'?'Please fill in date and amount.':'Completa fecha y cantidad.');return;}
   if(!equipment.length){alert(lang==='en'?'Please select at least one equipment item.':'Selecciona al menos un artículo.');return;}
   if(src==='tracker'){
-    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,equipment,customer,status,notes,hasDeposit,depositAmt,depositDate,depositMethod,editedAt:today()};
+    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,equipment,customer,status,notes,hasDeposit,depositAmt,depositDate,depositMethod,balancePaid,balanceAmt,balancePaidDate,balanceMethod,balancePaidOnDelivery,editedAt:today()};
   } else {
-    const entry={id:id||uid(),date,rentalType,rentalSubtype,equipment,customer,amount,status,notes,hasDeposit,depositAmt,depositDate,depositMethod};
+    const entry={id:id||uid(),date,rentalType,rentalSubtype,equipment,customer,amount,status,notes,hasDeposit,depositAmt,depositDate,depositMethod,balancePaid,balanceAmt,balancePaidDate,balanceMethod,balancePaidOnDelivery};
     if(id){const idx=fbIncome.findIndex(x=>x.id===id);if(idx>=0)fbIncome[idx]=entry;}
     else fbIncome.push(entry);
   }
