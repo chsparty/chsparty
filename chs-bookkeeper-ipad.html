@@ -370,8 +370,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;heigh
       <label class="toggle"><input type="checkbox" id="mi-has-deposit" onchange="toggleDepositBox()"><span class="toggle-slider"></span></label>
     </div>
     <div id="deposit-box" class="deposit-box" style="display:none">
-      <div class="fgrp"><label class="flbl">Deposit Amount ($)</label><input type="number" class="finput" id="mi-deposit" min="0" step="0.01" placeholder="0.00" inputmode="decimal"></div>
-      <div style="font-size:12px;color:#0d8a55;font-weight:600">&#128161; Balance due = Total minus Deposit</div>
+      <div class="r2">
+        <div class="fgrp"><label class="flbl">Deposit Amount ($)</label><input type="number" class="finput" id="mi-deposit" min="0" step="0.01" placeholder="0.00" inputmode="decimal"></div>
+        <div class="fgrp"><label class="flbl">Date Received</label><input type="date" class="finput" id="mi-dep-date"></div>
+      </div>
+      <div class="fgrp"><label class="flbl">Payment Method</label>
+        <select class="finput" id="mi-dep-method">
+          <option value="cash">&#128181; Cash</option>
+          <option value="cashapp">&#128241; Cash App</option>
+          <option value="zelle">&#128153; Zelle</option>
+          <option value="applepay">&#127822; Apple Pay</option>
+        </select>
+      </div>
     </div>
     <div class="fgrp" style="margin-top:10px"><label class="flbl">Notes</label><input type="text" class="finput" id="mi-notes" placeholder="e.g. 3-hour rental, delivery included"></div>
     <div class="modal-foot">
@@ -801,6 +811,10 @@ function renderDash(){
 }
 
 /* ── INCOME (UNIFIED) ── */
+function depMethodLabel(m){
+  const map={cash:'&#128181; Cash',cashapp:'&#128241; Cash App',zelle:'&#128153; Zelle',applepay:'&#127822; Apple Pay'};
+  return m?map[m]||m:'';
+}
 function renderIncome(){
   const t=TX[lang];
   const all=getAllIncome();
@@ -856,8 +870,8 @@ function renderIncome(){
           <td><div style="display:flex;flex-wrap:wrap;gap:3px;max-width:160px">${(i.equipment&&i.equipment.length?i.equipment.map(e=>`<span class="badge b-plum">${e.label}</span>`).join(''):`<span class="badge b-plum">${rtypeI(i.rentalType||'other')} ${rtypeL(i.rentalType||'other')}${i.rentalSubtype?'<br><span style="font-size:9px">↳'+subtypeLabel(i.rentalSubtype)+'</span>':''}</span>`)}</div></td>
           <td style="color:var(--t2)">${i.customer||'—'}</td>
           <td class="fw" style="color:var(--green)">${f$(i.amount||0)}</td>
-          <td>${i.hasDeposit?`<span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span>`:'—'}</td>
-          <td>${balDue>0?`<span class="fw" style="color:var(--gold)">${f$(balDue)}</span>`:'<span style="color:var(--t3)">—</span>'}</td>
+          <td>${i.hasDeposit?`<div><span class="fw" style="color:var(--blue)">${f$(i.depositAmt||0)}</span><div style="font-size:10px;color:var(--t3);margin-top:2px">${depMethodLabel(i.depositMethod)+(i.depositDate?' · '+dateDisplay(i.depositDate):'')}</div></div>`:'—'}</td>
+          <td>${(()=>{const fut=(i.date||'')>=today();if(!fut||!i.hasDeposit)return'<span style="color:var(--t3)">—</span>';return balDue>0?`<span class="fw" style="color:var(--gold)">${f$(balDue)}</span>`:'<span class="fw c-green">Paid ✓</span>';})()}</td>
           <td>${statusBadge(i.status||'collected')}</td>
           <td>${srcBadge(i._src)}</td>
           <td style="display:flex;gap:5px;flex-wrap:nowrap">
@@ -1093,6 +1107,8 @@ function openIncomeModal(id,src){
   document.getElementById('mi-has-deposit').checked=false;
   document.getElementById('deposit-box').style.display='none';
   document.getElementById('mi-deposit').value='';
+  if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=today();
+  if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value='cash';
   if(!id){
     // New entry
     document.getElementById('mi-title').textContent=lang==='en'?'Add Income':'Agregar Ingreso';
@@ -1123,7 +1139,7 @@ function openIncomeModal(id,src){
     document.getElementById('mi-notes').value=i.notes||'';
     updateEquipSummary();
     document.getElementById('mi-equip-picker').style.display='none';
-    if(i.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=i.depositAmt||'';}
+    if(i.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=i.depositAmt||'';if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=i.depositDate||'';if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value=i.depositMethod||'cash';}
   } else if(src==='tracker'){
     const r=fbRentals.find(x=>x.id===id); if(!r)return;
     const e=fbRentalEdits[id]||{};
@@ -1141,7 +1157,7 @@ function openIncomeModal(id,src){
     document.getElementById('mi-notes').value=e.notes||'';
     updateEquipSummary();
     document.getElementById('mi-equip-picker').style.display='none';
-    if(e.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=e.depositAmt||'';}
+    if(e.hasDeposit){document.getElementById('mi-has-deposit').checked=true;document.getElementById('deposit-box').style.display='block';document.getElementById('mi-deposit').value=e.depositAmt||'';if(document.getElementById('mi-dep-date'))document.getElementById('mi-dep-date').value=e.depositDate||'';if(document.getElementById('mi-dep-method'))document.getElementById('mi-dep-method').value=e.depositMethod||'cash';}
   }
   openModal('m-income');
 }
@@ -1159,12 +1175,14 @@ function saveIncome(){
   const notes=document.getElementById('mi-notes').value.trim();
   const hasDeposit=document.getElementById('mi-has-deposit').checked;
   const depositAmt=hasDeposit?parseFloat(document.getElementById('mi-deposit').value)||0:0;
+  const depositDate=hasDeposit?(document.getElementById('mi-dep-date')?.value||''):'';
+  const depositMethod=hasDeposit?(document.getElementById('mi-dep-method')?.value||'cash'):'';
   if(!date||!amount){alert(lang==='en'?'Please fill in date and amount.':'Completa fecha y cantidad.');return;}
   if(!equipment.length){alert(lang==='en'?'Please select at least one equipment item.':'Selecciona al menos un artículo.');return;}
   if(src==='tracker'){
-    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,equipment,customer,status,notes,hasDeposit,depositAmt,editedAt:today()};
+    fbRentalEdits[id]={amount,date,rentalType,rentalSubtype,equipment,customer,status,notes,hasDeposit,depositAmt,depositDate,depositMethod,editedAt:today()};
   } else {
-    const entry={id:id||uid(),date,rentalType,rentalSubtype,equipment,customer,amount,status,notes,hasDeposit,depositAmt};
+    const entry={id:id||uid(),date,rentalType,rentalSubtype,equipment,customer,amount,status,notes,hasDeposit,depositAmt,depositDate,depositMethod};
     if(id){const idx=fbIncome.findIndex(x=>x.id===id);if(idx>=0)fbIncome[idx]=entry;}
     else fbIncome.push(entry);
   }

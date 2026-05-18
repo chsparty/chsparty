@@ -312,6 +312,14 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
               <input class="finput" type="number" id="inp-deposit" value="50" min="0" step="0.01" style="width:80px;margin:0;font-size:13px;padding:6px 8px" oninput="updateBalance()">
             </div>
           </div>
+          <div id="dep-method-wrap" style="display:none;margin-top:8px">
+            <select id="inp-dep-method" class="finput" style="font-size:13px;padding:7px 10px">
+              <option value="cash">&#128181; Cash</option>
+              <option value="cashapp">&#128241; Cash App</option>
+              <option value="zelle">&#128153; Zelle</option>
+              <option value="applepay">&#127822; Apple Pay</option>
+            </select>
+          </div>
           <div id="balance-box" style="display:none;border-radius:10px;padding:10px 13px;display:flex;align-items:center;justify-content:space-between">
             <span style="font-size:12px;font-weight:700" id="balance-lbl">Balance due</span>
             <span style="font-size:18px;font-weight:900" id="balance-amt">$0.00</span>
@@ -399,6 +407,14 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
             <span style="font-size:13px;font-weight:800;color:var(--navy)">$</span>
             <input class="finput" type="number" id="edit-deposit" value="50" min="0" step="0.01" style="width:80px;margin:0;font-size:13px;padding:6px 8px" oninput="updateEditBalance()">
           </div>
+        </div>
+        <div id="edit-dep-method-wrap" style="display:none;margin-top:8px">
+          <select id="edit-dep-method" class="finput" style="font-size:13px;padding:7px 10px">
+            <option value="cash">&#128181; Cash</option>
+            <option value="cashapp">&#128241; Cash App</option>
+            <option value="zelle">&#128153; Zelle</option>
+            <option value="applepay">&#127822; Apple Pay</option>
+          </select>
         </div>
         <div id="edit-balance-box" style="display:none;border-radius:10px;padding:10px 13px;display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:12px;font-weight:700" id="edit-balance-lbl">Balance due</span>
@@ -759,7 +775,7 @@ function showSec(s){
     initEqQty();
     depositEnabled=false;
     const dc=document.getElementById('dep-check');if(dc)dc.className='acc-check';
-    const dw=document.getElementById('dep-amount-wrap');if(dw)dw.style.display='none';
+    const dw=document.getElementById('dep-amount-wrap');if(dw)dw.style.display='none';const dmw=document.getElementById('dep-method-wrap');if(dmw)dmw.style.display='none';
     const bb=document.getElementById('balance-box');if(bb)bb.style.display='none';
     const qi=document.getElementById('inp-quote');if(qi)qi.value='';
     renderAddForm();
@@ -1044,7 +1060,7 @@ function openSheet(id){
   ${r.notes?`<div class="drow"><span class="dlbl">${t.notes}</span><span class="dval">${r.notes}</span></div>`:''}
   ${r.quote>0?`<div style="margin-top:12px;background:var(--off);border-radius:12px;padding:12px 14px">
     <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--tlight)">${lang==='en'?'TOTAL QUOTE':'TOTAL'}</span><span style="font-size:15px;font-weight:900;color:var(--navy)">$${parseFloat(r.quote).toFixed(2)}</span></div>
-    ${r.depositEnabled?`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--green)">${lang==='en'?'DEPOSIT PAID':'DEPÓSITO'}</span><span style="font-size:13px;font-weight:800;color:var(--green)">−$${parseFloat(r.depositAmt||0).toFixed(2)}</span></div>`:''}
+    ${r.depositEnabled?`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--green)">${lang==='en'?'DEPOSIT PAID':'DEPÓSITO'}</span><div style="text-align:right"><span style="font-size:13px;font-weight:800;color:var(--green)">−$${parseFloat(r.depositAmt||0).toFixed(2)}</span>${r.depositMethod?`<div style="font-size:11px;color:var(--green);opacity:0.8">${{cash:'💵 Cash',cashapp:'📱 Cash App',zelle:'💙 Zelle',applepay:'🍎 Apple Pay'}[r.depositMethod]||r.depositMethod}</div>`:''}</div></div>`:''}
     <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between">
       <span style="font-size:13px;font-weight:800;color:${(r.quote-( r.depositEnabled?r.depositAmt:0))<=0?'#27ae60':'#f39c12'}">${(r.quote-(r.depositEnabled?r.depositAmt:0))<=0?(lang==='en'?'PAID IN FULL ✓':'PAGADO ✓'):(lang==='en'?'BALANCE DUE':'SALDO')}</span>
       <span style="font-size:16px;font-weight:900;color:${(r.quote-(r.depositEnabled?r.depositAmt:0))<=0?'#27ae60':'#f39c12'}">$${Math.max(0,r.quote-(r.depositEnabled?r.depositAmt:0)).toFixed(2)}</span>
@@ -1229,14 +1245,14 @@ async function submitRental(){
   if(!has){alert(lang==='en'?'Select at least one item.':'Selecciona al menos un artículo.');return;}
   const quote=parseFloat(document.getElementById('inp-quote')?.value)||0;
   const depositAmt=depositEnabled?(parseFloat(document.getElementById('inp-deposit')?.value)||0):0;
-  rentals.push({id:Date.now().toString(),name,phone,address:addr,date,equipment,notes:document.getElementById('inp-notes').value.trim(),quote,depositEnabled,depositAmt});
+  const depositMethod=depositEnabled?(document.getElementById('inp-dep-method')?.value||'cash'):'';rentals.push({id:Date.now().toString(),name,phone,address:addr,date,equipment,notes:document.getElementById('inp-notes').value.trim(),quote,depositEnabled,depositAmt,depositMethod});
   lastKnownRentalIds.add(rentals[rentals.length-1].id);
   await pushData();
   ['inp-name','inp-phone','inp-addr','inp-notes','inp-quote'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('inp-date').value='';
   depositEnabled=false;
   const dc=document.getElementById('dep-check');if(dc)dc.className='acc-check';
-  const dw=document.getElementById('dep-amount-wrap');if(dw)dw.style.display='none';
+  const dw=document.getElementById('dep-amount-wrap');if(dw)dw.style.display='none';const dmw=document.getElementById('dep-method-wrap');if(dmw)dmw.style.display='none';
   const bb=document.getElementById('balance-box');if(bb)bb.style.display='none';
   initEqQty();
   const[y,m]=date.split('-').map(Number);curYear=y;curMonth=m-1;selDay=date;
@@ -1433,7 +1449,7 @@ function openEditRental(id){
   if(ecb)ecb.className='acc-check'+(editDepositEnabled?' checked':'');
   const edw=document.getElementById('edit-dep-amount-wrap');
   if(edw)edw.style.display=editDepositEnabled?'flex':'none';
-  const edi=document.getElementById('edit-deposit');if(edi)edi.value=r.depositAmt||50;
+  const edi=document.getElementById('edit-deposit');if(edi)edi.value=r.depositAmt||50;const edm=document.getElementById('edit-dep-method');if(edm)edm.value=r.depositMethod||'cash';const edmw=document.getElementById('edit-dep-method-wrap');if(edmw)edmw.style.display=r.depositEnabled?'block':'none';
   setTimeout(updateEditBalance,50);
   // copy equipment
   editEqQty={};
@@ -1499,7 +1515,7 @@ async function saveEditRental(){
   allItems().forEach(i=>equipment[i.k]=editEqQty[i.k]||0);
   const quote=parseFloat(document.getElementById('edit-quote')?.value)||0;
   const depositAmt=editDepositEnabled?(parseFloat(document.getElementById('edit-deposit')?.value)||0):0;
-  rentals[idx]={...rentals[idx],name,phone,address:addr,date,equipment,notes:document.getElementById('edit-notes').value.trim(),quote,depositEnabled:editDepositEnabled,depositAmt};
+  const editDepositMethod=editDepositEnabled?(document.getElementById('edit-dep-method')?.value||'cash'):'';rentals[idx]={...rentals[idx],name,phone,address:addr,date,equipment,notes:document.getElementById('edit-notes').value.trim(),quote,depositEnabled:editDepositEnabled,depositAmt,depositMethod:editDepositMethod};
   await pushData();
   document.getElementById('edit-overlay').style.display='none';
   renderActive();
@@ -1558,8 +1574,10 @@ function toggleDeposit(){
   depositEnabled=!depositEnabled;
   const cb=document.getElementById('dep-check');
   const wrap=document.getElementById('dep-amount-wrap');
+  const mwrap=document.getElementById('dep-method-wrap');
   if(cb)cb.className='acc-check'+(depositEnabled?' checked':'');
   if(wrap)wrap.style.display=depositEnabled?'flex':'none';
+  if(mwrap)mwrap.style.display=depositEnabled?'block':'none';
   updateBalance();
 }
 
@@ -1595,8 +1613,10 @@ function toggleEditDeposit(){
   editDepositEnabled=!editDepositEnabled;
   const cb=document.getElementById('edit-dep-check');
   const wrap=document.getElementById('edit-dep-amount-wrap');
+  const mwrap=document.getElementById('edit-dep-method-wrap');
   if(cb)cb.className='acc-check'+(editDepositEnabled?' checked':'');
   if(wrap)wrap.style.display=editDepositEnabled?'flex':'none';
+  if(mwrap)mwrap.style.display=editDepositEnabled?'block':'none';
   updateEditBalance();
 }
 
