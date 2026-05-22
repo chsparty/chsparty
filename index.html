@@ -1075,6 +1075,18 @@ async function delRental(id){
   if(!confirm(T[lang].confirmDel))return;
   rentals=rentals.filter(r=>r.id!==id);
   await pushData();
+  // Also remove from CHS Bookkeeper if it was synced there
+  try{
+    const bk=await fbGet('chs_bookkeeper');
+    if(bk&&bk.income){
+      let inc=Array.isArray(bk.income)?bk.income:Object.values(bk.income);
+      const before=inc.length;
+      inc=inc.filter(i=>i.trackerId!==id);
+      if(inc.length!==before){
+        await fbSet('chs_bookkeeper',{...bk,income:inc});
+      }
+    }
+  }catch(e){console.error('Bookkeeper sync delete error:',e);}
   document.getElementById('overlay').style.display='none';
   renderActive();
 }
