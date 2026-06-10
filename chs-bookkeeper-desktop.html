@@ -122,6 +122,38 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
 .ic-btn.danger{border-color:#fdd;background:#fff5f5}
 .ic-btn.danger:hover{background:#ffe4e4}
 
+/* ── DATE GROUP ── */
+.date-group{margin-bottom:10px;border-radius:18px;overflow:hidden;border:1.5px solid var(--pink-border);box-shadow:var(--shadow);background:#fff}
+.dg-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;cursor:pointer;background:linear-gradient(135deg,var(--pink-pale) 0%,#fff 100%);transition:background .15s;user-select:none;gap:14px}
+.dg-hdr:hover{background:var(--pink-border)}
+.dg-hdr-left{display:flex;align-items:center;gap:14px}
+.dg-date{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
+.dg-count{font-size:12px;font-weight:700;color:var(--text-light);background:var(--pink-pale);border:1px solid var(--pink-border);padding:3px 10px;border-radius:20px}
+.dg-hdr-right{display:flex;align-items:center;gap:14px}
+.dg-total{font-family:'DM Serif Display',serif;font-size:22px;color:var(--pink-dark)}
+.dg-arrow{font-size:13px;color:var(--pink);transition:transform .22s;display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--pink-pale);border:1px solid var(--pink-border)}
+.dg-arrow.open{transform:rotate(180deg)}
+.dg-body{display:none}.dg-body.open{display:block}
+.dg-body-inner{border-top:1.5px solid var(--pink-border)}
+/* Rental row */
+.rr{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--bg);transition:background .1s}
+.rr:last-child{border-bottom:none}
+.rr:hover{background:var(--pink-pale)}
+.rr-bar{width:4px;border-radius:4px;flex-shrink:0;align-self:stretch;min-height:44px;background:var(--pink-light)}
+.rr-bar.paid{background:var(--green)}
+.rr-bar.pending{background:var(--orange)}
+.rr-info{flex:1;min-width:0}
+.rr-name{font-size:15px;font-weight:800;color:var(--text);cursor:pointer;margin-bottom:5px}
+.rr-name:hover{color:var(--pink)}
+.rr-tags{display:flex;flex-wrap:wrap;gap:4px}
+.rr-right{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.rr-money{text-align:right}
+.rr-total{font-size:19px;font-weight:800;color:var(--text)}
+.rr-sub{font-size:11px;font-weight:700;margin-top:3px}
+.rr-sub.paid{color:var(--green)}
+.rr-sub.pending{color:var(--orange)}
+.rr-btns{display:flex;gap:6px}
+
 /* ── EXPENSE CARDS ── */
 .expense-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:1200px){.expense-grid{grid-template-columns:repeat(2,1fr)}}
@@ -139,16 +171,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
 .ec-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .ec-amt{font-size:16px;font-weight:800;color:var(--red)}
 .ec-rcpt{font-size:10px;color:var(--pink);font-weight:700}
-
-/* ── TAKE-HOME BANNER ── */
-.takehome-banner{background:linear-gradient(135deg,#1a2a4a 0%,#2d4a6a 100%);border-radius:20px;padding:22px 26px;margin-bottom:20px;box-shadow:0 6px 28px rgba(26,42,74,.25)}
-.th-title{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
-.th-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.th-card{background:rgba(255,255,255,.08);border-radius:14px;padding:16px 18px;border:1px solid rgba(255,255,255,.12);text-align:center}
-.th-name{font-size:13px;font-weight:700;color:rgba(255,255,255,.65);margin-bottom:4px}
-.th-pct{font-size:11px;color:rgba(255,255,255,.35);font-weight:600;margin-bottom:10px}
-.th-amt{font-family:'DM Serif Display',serif;font-size:36px;color:#6ee08b;letter-spacing:-1px;line-height:1}
-.th-math{font-size:10px;color:rgba(255,255,255,.35);font-weight:600;margin-top:6px}
 
 /* ── SUMMARY ── */
 .sum-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
@@ -378,7 +400,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
           </div>
         </div>
         <div class="section-lbl" id="inc-grid-lbl"></div>
-        <div class="cards-grid" id="income-list"></div>
+        <div id="income-list"></div>
       </div>
 
       <!-- EXPENSES -->
@@ -399,7 +421,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
 
       <!-- SUMMARY -->
       <div class="section" id="sec-summary">
-        <div id="sum-container">
         <div class="month-nav" style="margin-bottom:20px">
           <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
           <div class="mnav-lbl" id="sum-month"></div>
@@ -408,7 +429,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
         <div class="sum-layout">
           <div class="sum-left" id="sum-left"></div>
           <div class="sum-right" id="sum-right"></div>
-        </div>
         </div>
       </div>
 
@@ -757,6 +777,15 @@ function filteredIncome(){
 }
 
 // ── INCOME RENDER ─────────────────────────────────────────────────────────────
+var openGroups={};
+function toggleDG(dateKey){
+  openGroups[dateKey]=!openGroups[dateKey];
+  const body=document.getElementById('dgb-'+dateKey);
+  const arrow=document.getElementById('dga-'+dateKey);
+  if(body)body.classList.toggle('open',openGroups[dateKey]);
+  if(arrow)arrow.classList.toggle('open',openGroups[dateKey]);
+}
+
 function renderIncome(){
   const list=filteredIncome();
   const total=list.reduce((s,r)=>s+(parseFloat(r.totalAmount)||0),0);
@@ -764,30 +793,80 @@ function renderIncome(){
   document.getElementById('inc-count').textContent=list.length+' rental'+(list.length!==1?'s':'');
   document.getElementById('inc-grid-lbl').textContent=list.length+' rental'+(list.length!==1?'s':'');
   const el=document.getElementById('income-list');
-  if(!list.length){el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-icon">💸</div><div class="empty-txt">No rentals for this period</div></div>';return;}
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:48px 0"><div style="font-size:48px;margin-bottom:12px">💸</div><div style="font-size:15px;color:var(--text-light);font-weight:600">No rentals for this period</div></div>';return;}
+
+  // Group by date
   const sorted=[...list].sort((a,b)=>b.date.localeCompare(a.date));
-  el.innerHTML=sorted.map(r=>{
-    const dep=r.depositPaid, rem=r.remainingPaid;
-    const statusClass=rem?'paid':dep&&!rem?'pending':'';
-    const badge=rem?'<span class="badge paid">✓ Paid</span>':dep&&!rem?'<span class="badge pending">Pending</span>':'';
-    const trackerBadge=r.fromTracker?'<span class="badge tracker">Tracker</span>':'';
-    const tags=(r.equipment||[]).map(e=>`<span class="ic-tag">${e}</span>`).join('');
-    const bal=Math.max(0,(parseFloat(r.totalAmount)||0)-(dep?(parseFloat(r.depositAmt)||0):0));
-    const depLine=dep?`<div class="ic-dep-line">Deposit: $${(parseFloat(r.depositAmt)||0).toFixed(2)}${r.depositMethod?' · '+fmtMeth(r.depositMethod):''}</div>`:'';
-    const balLine=dep&&!rem?`<div class="ic-bal">Balance Due: $${bal.toFixed(2)}</div>`:rem?`<div class="ic-paid-line">Fully Collected ✓</div>`:'';
-    return `<div class="ic ${statusClass}">
-      <div class="ic-head"><div class="ic-date">${fmtDate(r.date)}</div><div class="ic-badges">${badge}${trackerBadge}</div></div>
-      <div class="ic-name" onclick="openCustomer('${r.id}')">${r.customerName||'Unknown Customer'}</div>
-      ${tags?`<div class="ic-tags">${tags}</div>`:''}
-      <div class="ic-foot">
-        <div class="ic-money">
-          <div class="ic-total">$${(parseFloat(r.totalAmount)||0).toFixed(2)}</div>
-          ${depLine}${balLine}
+  const groups={};
+  sorted.forEach(r=>{
+    const d=r.date||'';
+    if(!groups[d])groups[d]=[];
+    groups[d].push(r);
+  });
+
+  // Determine today for auto-expand
+  const today=new Date().toISOString().split('T')[0];
+
+  el.innerHTML=Object.entries(groups).map(([date,rentals])=>{
+    const safeKey=date.replace(/-/g,'');
+    const dayTotal=rentals.reduce((s,r)=>s+(parseFloat(r.totalAmount)||0),0);
+    const allPaid=rentals.every(r=>r.remainingPaid);
+    const hasPending=rentals.some(r=>r.depositPaid&&!r.remainingPaid);
+    // Auto-open today and most recent date
+    if(openGroups[safeKey]===undefined){
+      openGroups[safeKey]=(date===today||date===sorted[0]?.date);
+    }
+    const isOpen=openGroups[safeKey];
+
+    const rows=rentals.map(r=>{
+      const dep=r.depositPaid, rem=r.remainingPaid;
+      const barClass=rem?'paid':dep&&!rem?'pending':'';
+      const badge=rem?'<span class="badge paid">✓ Paid</span>':dep&&!rem?'<span class="badge pending">Deposit</span>':'';
+      const trackerBadge=r.fromTracker?'<span class="badge tracker">Tracker</span>':'';
+      const tags=(r.equipment||[]).map(e=>`<span class="ic-tag">${e}</span>`).join('');
+      const bal=Math.max(0,(parseFloat(r.totalAmount)||0)-(dep?(parseFloat(r.depositAmt)||0):0));
+      const subLine=rem?'<div class="rr-sub paid">Fully Collected ✓</div>':dep&&!rem?`<div class="rr-sub pending">Balance Due: $${bal.toFixed(2)}</div>`:'';
+      const depLine=dep?`<div style="font-size:11px;color:var(--text-mid);font-weight:500;margin-top:2px">Deposit: $${(parseFloat(r.depositAmt)||0).toFixed(2)}${r.depositMethod?' · '+fmtMeth(r.depositMethod):''}</div>`:'';
+      return `<div class="rr">
+        <div class="rr-bar ${barClass}"></div>
+        <div class="rr-info">
+          <div class="rr-name" onclick="openCustomer('${r.id}')">${r.customerName||'Unknown Customer'}</div>
+          ${tags?`<div class="rr-tags">${tags}</div>`:''}
         </div>
-        <div class="ic-btns">
-          <button class="ic-btn" onclick="editIncome('${r.id}')">✏️</button>
-          <button class="ic-btn danger" onclick="confirmDelIncome('${r.id}')">🗑️</button>
+        <div class="rr-right">
+          <div style="display:flex;gap:5px;align-items:center">${badge}${trackerBadge}</div>
+          <div class="rr-money">
+            <div class="rr-total">$${(parseFloat(r.totalAmount)||0).toFixed(2)}</div>
+            ${depLine}${subLine}
+          </div>
+          <div class="rr-btns">
+            <button class="ic-btn" onclick="editIncome('${r.id}')">✏️</button>
+            <button class="ic-btn danger" onclick="confirmDelIncome('${r.id}')">🗑️</button>
+          </div>
         </div>
+      </div>`;
+    }).join('');
+
+    const statusDot=allPaid
+      ?`<span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:4px"></span>`
+      :hasPending
+      ?`<span style="width:8px;height:8px;border-radius:50%;background:var(--orange);display:inline-block;margin-right:4px"></span>`
+      :'';
+
+    return `<div class="date-group">
+      <div class="dg-hdr" onclick="toggleDG('${safeKey}')">
+        <div class="dg-hdr-left">
+          <div class="dg-date">${fmtDate(date)}</div>
+          <div class="dg-count">${rentals.length} rental${rentals.length!==1?'s':''}</div>
+        </div>
+        <div class="dg-hdr-right">
+          ${statusDot}
+          <div class="dg-total">$${dayTotal.toFixed(2)}</div>
+          <div class="dg-arrow${isOpen?' open':''}" id="dga-${safeKey}">▾</div>
+        </div>
+      </div>
+      <div class="dg-body${isOpen?' open':''}" id="dgb-${safeKey}">
+        <div class="dg-body-inner">${rows}</div>
       </div>
     </div>`;
   }).join('');
@@ -1017,34 +1096,9 @@ function renderSummary(){
   const mExp=expenses.filter(e=>{if(!e.date)return false;const[y,m]=e.date.split('-');return+y===sumYear&&+m===sumMonth+1;});
   const gross=mInc.reduce((s,r)=>s+(parseFloat(r.totalAmount)||0),0);
   const totalExp=mExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
-  const net=Math.max(0,gross-totalExp);
   const resPct=settings.reserve||30;
-  const resAmt=net*(resPct/100);
-  const distrib=Math.max(0,net-resAmt);
-
-  // ── TAKE-HOME BANNER ──
-  const thHtml=`<div class="takehome-banner">
-    <div class="th-title">💰 Partner Take-Home — ${MONTHS[sumMonth]} ${sumYear}</div>
-    <div class="th-grid">
-      ${settings.partners.map(p=>{
-        const amt=distrib*(p.pct/100);
-        return `<div class="th-card">
-          <div class="th-name">${p.name}</div>
-          <div class="th-pct">${p.pct}% share</div>
-          <div class="th-amt">$${amt.toFixed(2)}</div>
-          <div class="th-math">of $${distrib.toFixed(2)} distributable</div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
-
-  // Inject banner before the two-column layout
-  const container=document.getElementById('sum-container');
-  if(container){
-    let banner=document.getElementById('th-banner');
-    if(!banner){banner=document.createElement('div');banner.id='th-banner';container.insertBefore(banner,container.firstChild);}
-    banner.innerHTML=thHtml;
-  }
+  const resAmt=gross*(resPct/100);
+  const distrib=gross-resAmt;
 
   document.getElementById('sum-left').innerHTML=`
     <div class="sum-card">
@@ -1054,13 +1108,13 @@ function renderSummary(){
     </div>
     <div class="sum-card">
       <div class="sum-card-lbl">Expenses</div>
-      <div class="sum-card-amt pink">−$${totalExp.toFixed(2)}</div>
+      <div class="sum-card-amt pink">$${totalExp.toFixed(2)}</div>
       <div class="sum-card-sub">${mExp.length} expense${mExp.length!==1?'s':''}</div>
     </div>
     <div class="sum-card">
       <div class="sum-card-lbl">Net Income</div>
-      <div class="sum-card-amt green">$${net.toFixed(2)}</div>
-      <div class="sum-card-sub">Gross minus expenses</div>
+      <div class="sum-card-amt green">$${(gross-totalExp).toFixed(2)}</div>
+      <div class="sum-card-sub">After expenses</div>
     </div>
     <div class="sum-card">
       <div class="sum-card-lbl">Distributable</div>
