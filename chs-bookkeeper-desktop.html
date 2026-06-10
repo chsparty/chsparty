@@ -140,6 +140,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
 .ec-amt{font-size:16px;font-weight:800;color:var(--red)}
 .ec-rcpt{font-size:10px;color:var(--pink);font-weight:700}
 
+/* ── TAKE-HOME BANNER ── */
+.takehome-banner{background:linear-gradient(135deg,#1a2a4a 0%,#2d4a6a 100%);border-radius:20px;padding:22px 26px;margin-bottom:20px;box-shadow:0 6px 28px rgba(26,42,74,.25)}
+.th-title{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.th-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.th-card{background:rgba(255,255,255,.08);border-radius:14px;padding:16px 18px;border:1px solid rgba(255,255,255,.12);text-align:center}
+.th-name{font-size:13px;font-weight:700;color:rgba(255,255,255,.65);margin-bottom:4px}
+.th-pct{font-size:11px;color:rgba(255,255,255,.35);font-weight:600;margin-bottom:10px}
+.th-amt{font-family:'DM Serif Display',serif;font-size:36px;color:#6ee08b;letter-spacing:-1px;line-height:1}
+.th-math{font-size:10px;color:rgba(255,255,255,.35);font-weight:600;margin-top:6px}
+
 /* ── SUMMARY ── */
 .sum-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .sum-left{display:flex;flex-direction:column;gap:12px}
@@ -389,6 +399,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
 
       <!-- SUMMARY -->
       <div class="section" id="sec-summary">
+        <div id="sum-container">
         <div class="month-nav" style="margin-bottom:20px">
           <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
           <div class="mnav-lbl" id="sum-month"></div>
@@ -397,6 +408,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Poppins'
         <div class="sum-layout">
           <div class="sum-left" id="sum-left"></div>
           <div class="sum-right" id="sum-right"></div>
+        </div>
         </div>
       </div>
 
@@ -1005,9 +1017,34 @@ function renderSummary(){
   const mExp=expenses.filter(e=>{if(!e.date)return false;const[y,m]=e.date.split('-');return+y===sumYear&&+m===sumMonth+1;});
   const gross=mInc.reduce((s,r)=>s+(parseFloat(r.totalAmount)||0),0);
   const totalExp=mExp.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const net=Math.max(0,gross-totalExp);
   const resPct=settings.reserve||30;
-  const resAmt=gross*(resPct/100);
-  const distrib=gross-resAmt;
+  const resAmt=net*(resPct/100);
+  const distrib=Math.max(0,net-resAmt);
+
+  // ── TAKE-HOME BANNER ──
+  const thHtml=`<div class="takehome-banner">
+    <div class="th-title">💰 Partner Take-Home — ${MONTHS[sumMonth]} ${sumYear}</div>
+    <div class="th-grid">
+      ${settings.partners.map(p=>{
+        const amt=distrib*(p.pct/100);
+        return `<div class="th-card">
+          <div class="th-name">${p.name}</div>
+          <div class="th-pct">${p.pct}% share</div>
+          <div class="th-amt">$${amt.toFixed(2)}</div>
+          <div class="th-math">of $${distrib.toFixed(2)} distributable</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  // Inject banner before the two-column layout
+  const container=document.getElementById('sum-container');
+  if(container){
+    let banner=document.getElementById('th-banner');
+    if(!banner){banner=document.createElement('div');banner.id='th-banner';container.insertBefore(banner,container.firstChild);}
+    banner.innerHTML=thHtml;
+  }
 
   document.getElementById('sum-left').innerHTML=`
     <div class="sum-card">
@@ -1017,13 +1054,13 @@ function renderSummary(){
     </div>
     <div class="sum-card">
       <div class="sum-card-lbl">Expenses</div>
-      <div class="sum-card-amt pink">$${totalExp.toFixed(2)}</div>
+      <div class="sum-card-amt pink">−$${totalExp.toFixed(2)}</div>
       <div class="sum-card-sub">${mExp.length} expense${mExp.length!==1?'s':''}</div>
     </div>
     <div class="sum-card">
       <div class="sum-card-lbl">Net Income</div>
-      <div class="sum-card-amt green">$${(gross-totalExp).toFixed(2)}</div>
-      <div class="sum-card-sub">After expenses</div>
+      <div class="sum-card-amt green">$${net.toFixed(2)}</div>
+      <div class="sum-card-sub">Gross minus expenses</div>
     </div>
     <div class="sum-card">
       <div class="sum-card-lbl">Distributable</div>
