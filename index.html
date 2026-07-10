@@ -790,9 +790,18 @@ function buildPublicAvailability(){
   });
   return out;
 }
+// Item names + categories so the website can label new equipment automatically
+// instead of rendering a raw key like "custom_1783657". Still zero PII.
+function buildPublicItems(){
+  const out={};
+  allItemsEver().forEach(i=>{out[i.k]={en:i.en,es:i.es,cat:i.cat};});
+  return out;
+}
 async function pushPublicAvailability(){
-  try{await fbSet('chs_public/availability',buildPublicAvailability());}
-  catch(e){console.warn('public mirror failed',e);}
+  try{
+    await fbSet('chs_public/availability',buildPublicAvailability());
+    await fbSet('chs_public/items',buildPublicItems());
+  }catch(e){console.warn('public mirror failed',e);}
 }
 
 async function pushData(){
