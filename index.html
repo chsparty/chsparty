@@ -169,6 +169,8 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
 .set-qty-ctrl{display:flex;align-items:center;gap:8px}
 .set-qty-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--off);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:700;font-family:'Nunito',sans-serif;flex-shrink:0}
 .set-qty-val{font-size:15px;font-weight:900;color:var(--navy);min-width:28px;text-align:center}
+.save-btn.unsaved{background:var(--orange)!important;animation:pulseSave 1.6s ease-in-out infinite}
+@keyframes pulseSave{0%,100%{opacity:1}50%{opacity:0.72}}
 .set-del-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid rgba(231,76,60,0.25);background:rgba(231,76,60,0.08);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--red);margin-left:6px;flex-shrink:0}
 .save-btn{width:100%;padding:15px;background:var(--navy);color:#fff;border:none;border-radius:13px;cursor:pointer;font-size:16px;font-weight:900;margin-top:14px;font-family:'Nunito',sans-serif}
 .save-btn:active{background:var(--navy-dark)}
@@ -819,7 +821,9 @@ function startPolling(){
         newR=Array.isArray(data.rentals)?data.rentals:Object.values(data.rentals||{});
         if(JSON.stringify(newR)!==JSON.stringify(rentals)){rentals=newR;changed=true;}
       }
-      if(data.inventory){
+      // Never let the server's stale copy overwrite quantities/prices the user
+      // is still typing. This is what was resetting an edited price after ~8s.
+      if(data.inventory&&!settingsDirty){
         const newI={...buildDefaultInventory(),...data.inventory};
         if(JSON.stringify(newI)!==JSON.stringify(inventory)){inventory=newI;changed=true;}
       }
@@ -831,7 +835,7 @@ function startPolling(){
         const newA=Array.isArray(data.archived)?data.archived:Object.values(data.archived||{});
         if(JSON.stringify(newA)!==JSON.stringify(archived)){archived=newA;changed=true;}
       }
-      if(data.prices&&JSON.stringify(data.prices)!==JSON.stringify(prices)){prices=data.prices;changed=true;}
+      if(data.prices&&!settingsDirty&&JSON.stringify(data.prices)!==JSON.stringify(prices)){prices=data.prices;changed=true;}
       if(data.customers&&JSON.stringify(data.customers)!==JSON.stringify(customers)){customers=data.customers;changed=true;}
       if(data.retiredItems){
         const newRt=Array.isArray(data.retiredItems)?data.retiredItems:Object.values(data.retiredItems);
@@ -941,6 +945,14 @@ function setNavColor(sec,on){
 }
 
 function showSec(s){
+  const cur=document.querySelector('.section.active');
+  if(cur&&cur.id==='sec-settings'&&s!=='settings'&&settingsDirty){
+    if(!confirm(lang==='en'
+      ? 'You have unsaved inventory or pricing changes. Leave without saving?'
+      : 'Tienes cambios de inventario o precios sin guardar. ¿Salir sin guardar?'))return;
+    clearSettingsDirty();
+    loadFromFirebase();   // discard local edits, re-pull the truth
+  }
   SECS.forEach(n=>document.getElementById('sec-'+n).classList.toggle('active',n===s));
   ['calendar','inventory','search','settings'].forEach(k=>{
     const el=document.getElementById('nav-'+k);
@@ -968,6 +980,10 @@ function renderActive(){
   const a=document.querySelector('.section.active');
   if(!a)return;
   const id=a.id.replace('sec-','');
+  if(id==='settings'){
+    const ae=document.activeElement;
+    if(ae&&a.contains(ae)&&ae.tagName==='INPUT')return;  // user is typing — hands off
+  }
   if(id==='calendar')renderCal();
   else if(id==='inventory')renderInv();
   else if(id==='search')renderSearch();
@@ -1476,6 +1492,19 @@ async function submitRental(){
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
 let setOpenCats=new Set();   // collapsed by default
 let retiredOpen=false;
+// True while Settings has edits that haven't been pushed. The 8s poll must not
+// overwrite them with the server's stale copy, and we must not repaint mid-type.
+let settingsDirty=false;
+function markSettingsDirty(){
+  settingsDirty=true;
+  const b=document.getElementById('save-btn');
+  if(b){b.textContent='● '+T[lang].saveInv;b.classList.add('unsaved');}
+}
+function clearSettingsDirty(){
+  settingsDirty=false;
+  const b=document.getElementById('save-btn');
+  if(b){b.textContent=T[lang].saveInv;b.classList.remove('unsaved');}
+}
 
 function renderSettings(){
   const t=T[lang];
@@ -1593,6 +1622,7 @@ function renderRetired(){
 }
 
 function adjSetQty(k,d){
+  markSettingsDirty();
   const cur=getInvQty(k);
   const newV=Math.max(0,Math.min(cur+d,10000));
   inventory[k]=newV;
@@ -1601,10 +1631,12 @@ function adjSetQty(k,d){
 }
 
 function setInvQtyDirect(k,val){
+  markSettingsDirty();
   inventory[k]=Math.max(0,Math.min(parseInt(val)||0,10000));
 }
 
 function setItemPrice(k,val){
+  markSettingsDirty();
   const v=parseFloat(val);
   if(isNaN(v)||v<=0)delete prices[k];
   else prices[k]=Math.round(v*100)/100;
@@ -1612,6 +1644,7 @@ function setItemPrice(k,val){
 
 async function saveInv(){
   await pushData();
+  clearSettingsDirty();
   alert(lang==='en'?'✅ Inventory & pricing saved!':'✅ ¡Inventario y precios guardados!');
   renderInv();
 }
@@ -1644,6 +1677,7 @@ async function deleteInvItem(k){
     if(!isRetired(k))retiredItems.push({k:item.k,cat:item.cat,en:item.en,es:item.es});
   }
   await pushData();
+  clearSettingsDirty();
   renderSettings();renderInv();
 }
 
