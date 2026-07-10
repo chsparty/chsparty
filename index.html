@@ -757,6 +757,7 @@ async function loadFromFirebase(){
     }
     setSyncStatus('ok',T[lang].synced);
     renderActive();
+    pushPublicAvailability();   // seed the mirror on first load, no save needed
   }catch(e){
     setSyncStatus('error',T[lang].syncErr);
   }
@@ -768,11 +769,36 @@ function buildDefaultInventory(){
   return inv;
 }
 
+// ─── PUBLIC AVAILABILITY MIRROR ──────────────────────────────────────────
+// The website's calendar used to fetch chs_app/rentals.json directly, which
+// shipped every customer's name, phone, address and quote to the browser of
+// anyone who visited the page. This writes a stripped node instead:
+//   chs_public/availability/2026-08-01/mw_monkey = 1
+// Dates and item counts only. Nothing identifying.
+function buildPublicAvailability(){
+  const out={};
+  rentals.forEach(r=>{
+    if(!r.date||!r.equipment)return;
+    Object.keys(r.equipment).forEach(k=>{
+      const q=parseInt(r.equipment[k])||0;
+      if(q<=0)return;
+      if(!out[r.date])out[r.date]={};
+      out[r.date][k]=(out[r.date][k]||0)+q;
+    });
+  });
+  return out;
+}
+async function pushPublicAvailability(){
+  try{await fbSet('chs_public/availability',buildPublicAvailability());}
+  catch(e){console.warn('public mirror failed',e);}
+}
+
 async function pushData(){
   setSyncStatus('syncing',T[lang].syncing);
   // PATCH, not PUT. A PUT overwrites the whole chs_app node, which means an
   // older client (or a future key we forget to list here) silently wipes data.
   const ok=await fbPatch('chs_app',{rentals,inventory,customItems,archived,prices,customers,retiredItems});
+  pushPublicAvailability();   // keep the website's calendar fed, PII-free
   if(ok)setSyncStatus('ok',T[lang].synced);
   else setSyncStatus('error',T[lang].syncErr);
 }
