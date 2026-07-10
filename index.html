@@ -113,6 +113,23 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
 .addr-suggestion{padding:10px 14px;font-size:13px;font-weight:600;color:var(--navy);border-bottom:1px solid var(--off);cursor:pointer;font-family:'Nunito',sans-serif;line-height:1.3}
 .addr-suggestion:last-child{border-bottom:none}
 .addr-suggestion:active{background:var(--off)}
+.cust-chip{display:none;align-items:center;gap:8px;background:rgba(242,101,34,0.08);border:1.5px solid rgba(242,101,34,0.3);border-radius:20px;padding:6px 8px 6px 12px;margin-bottom:10px}
+.cust-chip-txt{font-size:11px;font-weight:800;color:var(--orange-dark);flex:1}
+.cust-chip-x{width:22px;height:22px;border-radius:50%;border:none;background:rgba(242,101,34,0.15);color:var(--orange-dark);cursor:pointer;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif}
+.price-input{font-size:14px;font-weight:800;color:var(--navy);width:78px;text-align:right;border:1.5px solid var(--border);border-radius:8px;padding:5px 6px;font-family:'Nunito',sans-serif;background:var(--off);-webkit-appearance:none}
+.price-input:focus{outline:none;border-color:var(--orange);background:#fff}
+.set-price-wrap{display:flex;align-items:center;gap:3px;background:var(--off);border:1.5px solid var(--border);border-radius:8px;padding:0 6px}
+.set-price-wrap:focus-within{border-color:var(--orange);background:#fff}
+.set-price-wrap input{border:none;background:transparent;width:62px;text-align:right;font-size:14px;font-weight:800;color:var(--navy);font-family:'Nunito',sans-serif;padding:6px 0;-webkit-appearance:none}
+.set-price-wrap input:focus{outline:none}
+.set-row2{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.mini-lbl{font-size:9px;font-weight:800;color:var(--tlight);text-transform:uppercase;letter-spacing:0.5px}
+.sugg-box{display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(26,45,90,0.05);border:1.5px solid rgba(26,45,90,0.15);border-radius:10px;padding:9px 12px;margin-bottom:8px}
+.sugg-apply{background:var(--navy);color:#fff;border:none;border-radius:20px;padding:5px 12px;font-size:11px;font-weight:900;cursor:pointer;font-family:'Nunito',sans-serif;flex-shrink:0}
+.sugg-apply:disabled{opacity:0.35;cursor:default}
+.cat-add-btn{background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--tlight);font-size:12px;font-weight:800;padding:8px;width:100%;cursor:pointer;font-family:'Nunito',sans-serif;margin-bottom:6px}
+.cat-add-btn:active{background:var(--off)}
+.retired-row{display:flex;align-items:center;justify-content:space-between;background:var(--off);border:1.5px dashed var(--border);border-radius:10px;padding:9px 12px;margin-bottom:5px;opacity:0.8}
 /* inventory view items */
 .inv-item-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--off)}
 .inv-item-row:last-child{border-bottom:none}
@@ -286,8 +303,10 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
       <button onclick="showSec('calendar')" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--off);cursor:pointer;font-size:16px;color:var(--tmid);display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
     </div>
     <div class="add-wrap">
-      <div class="fgrp"><label class="flbl" id="lbl-name">Customer Name</label><input class="finput" type="text" id="inp-name" autocomplete="off" autocorrect="off" autocapitalize="words" oninput="autoCapName(this)"></div>
-      <div class="fgrp"><label class="flbl" id="lbl-phone">Phone Number</label><input class="finput" type="tel" id="inp-phone" placeholder="###-###-####" oninput="fmtPhone(this)" maxlength="12"></div>
+      <div class="cust-chip" id="cust-chip"><span class="cust-chip-txt" id="cust-chip-txt"></span><button class="cust-chip-x" onclick="clearCustomer()" title="Clear">✕</button></div>
+      <div class="fgrp"><label class="flbl" id="lbl-name">Customer Name</label><input class="finput" type="text" id="inp-name" autocomplete="off" autocorrect="off" autocapitalize="words" oninput="autoCapName(this);onCustomerInput()">
+      <div id="cust-suggestions" style="display:none;background:#fff;border:1.5px solid var(--border);border-radius:10px;margin-top:4px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div></div>
+      <div class="fgrp"><label class="flbl" id="lbl-phone">Phone Number</label><input class="finput" type="tel" id="inp-phone" placeholder="###-###-####" oninput="fmtPhone(this);onCustomerInput()" maxlength="12"></div>
       <div class="fgrp"><label class="flbl" id="lbl-addr">Address</label><input class="finput" type="text" id="inp-addr" autocorrect="off" autocomplete="off" oninput="onAddrInput(this.value)" placeholder="Start typing address...">
       <div id="addr-suggestions" style="display:none;background:#fff;border:1.5px solid var(--border);border-radius:10px;margin-top:4px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div></div>
       <div class="fgrp"><label class="flbl" id="lbl-date">Rental Date</label><input class="finput" type="date" id="inp-date" onchange="onDateChange()"></div>
@@ -298,11 +317,19 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
       </div>
       <div class="fgrp">
         <label class="flbl" id="lbl-pricing">Pricing</label>
+        <div class="sugg-box" id="sugg-box" style="display:none">
+          <div style="min-width:0">
+            <div class="mini-lbl" id="sugg-lbl">Suggested</div>
+            <div style="font-size:16px;font-weight:900;color:var(--navy);margin-top:1px" id="sugg-amt">$0.00</div>
+            <div style="font-size:10px;color:var(--tlight);font-weight:600;margin-top:1px" id="sugg-breakdown"></div>
+          </div>
+          <button class="sugg-apply" id="sugg-apply" onclick="applySuggested()">Use</button>
+        </div>
         <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="font-size:14px;font-weight:800;color:var(--navy)">$</span>
-            <input class="finput" type="number" id="inp-quote" placeholder="0.00" min="0" step="0.01" style="flex:1;margin:0" oninput="updateBalance()">
-            <span style="font-size:12px;font-weight:700;color:var(--tlight)" id="lbl-quote-hint">Total quote</span>
+            <input class="finput" type="number" id="inp-quote" placeholder="0.00" min="0" step="0.01" style="flex:1;margin:0" oninput="quoteTouched=true;updateBalance()">
+            <span style="font-size:12px;font-weight:700;color:var(--tlight)" id="lbl-quote-hint">Equipment</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
             <div class="acc-check" id="dep-check" onclick="toggleDeposit()" style="cursor:pointer;flex-shrink:0"></div>
@@ -310,6 +337,14 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
             <div style="display:flex;align-items:center;gap:4px;margin-left:auto" id="dep-amount-wrap" style="display:none">
               <span style="font-size:13px;font-weight:800;color:var(--navy)">$</span>
               <input class="finput" type="number" id="inp-deposit" value="50" min="0" step="0.01" style="width:80px;margin:0;font-size:13px;padding:6px 8px" oninput="updateBalance()">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+            <div class="acc-check" id="deliv-check" onclick="toggleDelivery()" style="cursor:pointer;flex-shrink:0"></div>
+            <span style="font-size:13px;font-weight:700;color:var(--navy)" id="lbl-deliv-chk">Add delivery fee</span>
+            <div style="display:flex;align-items:center;gap:4px;margin-left:auto" id="deliv-amount-wrap">
+              <span style="font-size:14px;font-weight:800;color:var(--tlight)">$</span>
+              <input class="finput" type="number" id="inp-delivery" value="0" min="0" step="0.01" style="width:80px;margin:0;font-size:13px;padding:6px 8px" oninput="updateBalance()">
             </div>
           </div>
           <div id="dep-method-wrap" style="display:none;margin-top:8px">
@@ -343,6 +378,7 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
         <span style="font-size:18px">+</span> <span id="new-item-lbl">Add New Equipment</span>
       </button>
       <div id="set-body"></div>
+      <div id="retired-body"></div>
       <button class="save-btn" id="save-btn" onclick="saveInv()">Save Inventory</button>
     </div>
   </div>
@@ -394,10 +430,18 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
     <div class="fgrp"><label class="flbl" id="edit-lbl-date">Rental Date</label><input class="finput" type="date" id="edit-date"></div>
     <div class="fgrp">
       <label class="flbl" id="edit-lbl-pricing">Pricing</label>
+      <div class="sugg-box" id="edit-sugg-box" style="display:none">
+        <div style="min-width:0">
+          <div class="mini-lbl" id="edit-sugg-lbl">Suggested</div>
+          <div style="font-size:16px;font-weight:900;color:var(--navy);margin-top:1px" id="edit-sugg-amt">$0.00</div>
+          <div style="font-size:10px;color:var(--tlight);font-weight:600;margin-top:1px" id="edit-sugg-breakdown"></div>
+        </div>
+        <button class="sugg-apply" id="edit-sugg-apply" onclick="applyEditSuggested()">Use</button>
+      </div>
       <div style="background:var(--off);border:1.5px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:14px;font-weight:800;color:var(--navy)">$</span>
-          <input class="finput" type="number" id="edit-quote" placeholder="0.00" min="0" step="0.01" style="flex:1;margin:0" oninput="updateEditBalance()">
+          <input class="finput" type="number" id="edit-quote" placeholder="0.00" min="0" step="0.01" style="flex:1;margin:0" oninput="editQuoteTouched=true;updateEditBalance()">
           <span style="font-size:12px;font-weight:700;color:var(--tlight)">Total quote</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
@@ -406,6 +450,14 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
           <div style="display:flex;align-items:center;gap:4px;margin-left:auto" id="edit-dep-amount-wrap">
             <span style="font-size:13px;font-weight:800;color:var(--navy)">$</span>
             <input class="finput" type="number" id="edit-deposit" value="50" min="0" step="0.01" style="width:80px;margin:0;font-size:13px;padding:6px 8px" oninput="updateEditBalance()">
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <div class="acc-check" id="edit-deliv-check" onclick="toggleEditDelivery()" style="cursor:pointer;flex-shrink:0"></div>
+          <span style="font-size:13px;font-weight:700;color:var(--navy)" id="edit-lbl-deliv-chk">Add delivery fee</span>
+          <div style="display:flex;align-items:center;gap:4px;margin-left:auto" id="edit-deliv-amount-wrap">
+            <span style="font-size:14px;font-weight:800;color:var(--tlight)">$</span>
+            <input class="finput" type="number" id="edit-delivery" value="0" min="0" step="0.01" style="width:80px;margin:0;font-size:13px;padding:6px 8px" oninput="updateEditBalance()">
           </div>
         </div>
         <div id="edit-dep-method-wrap" style="display:none;margin-top:8px">
@@ -489,6 +541,10 @@ body{font-family:'Nunito',sans-serif;background:var(--off);display:flex;flex-dir
       <label class="popup-lbl" id="popup-lbl-qty">Quantity</label>
       <input class="popup-input" id="popup-qty" type="number" min="0" value="1">
     </div>
+    <div class="popup-fgrp">
+      <label class="popup-lbl" id="popup-lbl-price">Price (each)</label>
+      <input class="popup-input" id="popup-price" type="number" min="0" step="0.01" placeholder="0.00">
+    </div>
     <div class="popup-actions">
       <button class="popup-cancel" onclick="closeNewItem()" id="popup-cancel-btn">Cancel</button>
       <button class="popup-save" onclick="saveNewItem()" id="popup-save-btn">Add Item</button>
@@ -518,7 +574,22 @@ const T={
     months:['January','February','March','April','May','June','July','August','September','October','November','December'],
     mShort:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
     synced:'Synced',syncing:'Syncing...',syncErr:'Sync error — check connection',
-    deleteItem:'Remove this item from inventory?'},
+    deleteItem:'Remove this item from inventory?',
+    setSub2:'Manage inventory, pricing & delivery',
+    priceLbl:'Price',qtyLbl:'Qty',eachLbl:'ea',
+    addToCat:'Add item here',
+    retiredLbl:'Retired Items',restoreBtn:'Restore',
+    retiredNote:'Hidden from booking. Still shown on past rentals.',
+    suggested:'Suggested',applyBtn:'Use',
+    delivChk:'Add delivery fee',delivLbl:'Delivery',
+    equipLbl:'Equipment',totalLbl:'TOTAL',
+    returningCust:'Returning customer',clearCust:'Clear',
+    custHint:'Tap to autofill name, phone & address',
+    priceHint:'Per unit, per event',
+    savedAddr:'Saved',
+    noPrice:'No price set',
+    hardDel:n=>`Delete "${n}" permanently? This cannot be undone.`,
+    softDel:(n,c)=>`"${n}" is used on ${c} booking${c===1?'':'s'}.\n\nIt will be removed from the booking form and inventory, but the name stays visible on those past rentals so your records stay correct.\n\nContinue?`},
   es:{sub:'Rastreador Interno',cal:'Calendario',inv:'Inventario',srch:'Buscar',set:'Ajustes',
     addTitle:'Nueva Renta',setTitle:'Ajustes',setSub:'Administrar inventario',
     lName:'Nombre del Cliente',lPhone:'Teléfono',lAddr:'Dirección',lDate:'Fecha de Renta',lEquip:'Equipo',lNotes:'Notas',
@@ -538,7 +609,22 @@ const T={
     months:['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
     mShort:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
     synced:'Sincronizado',syncing:'Sincronizando...',syncErr:'Error de sincronización',
-    deleteItem:'¿Eliminar este artículo del inventario?'}
+    deleteItem:'¿Eliminar este artículo del inventario?',
+    setSub2:'Inventario, precios y entrega',
+    priceLbl:'Precio',qtyLbl:'Cant.',eachLbl:'c/u',
+    addToCat:'Agregar aquí',
+    retiredLbl:'Artículos Retirados',restoreBtn:'Restaurar',
+    retiredNote:'Oculto al reservar. Aún aparece en rentas pasadas.',
+    suggested:'Sugerido',applyBtn:'Usar',
+    delivChk:'Agregar costo de entrega',delivLbl:'Entrega',
+    equipLbl:'Equipo',totalLbl:'TOTAL',
+    returningCust:'Cliente frecuente',clearCust:'Limpiar',
+    custHint:'Toca para llenar nombre, teléfono y dirección',
+    priceHint:'Por unidad, por evento',
+    savedAddr:'Guardada',
+    noPrice:'Sin precio',
+    hardDel:n=>`¿Eliminar "${n}" permanentemente? No se puede deshacer.`,
+    softDel:(n,c)=>`"${n}" se usa en ${c} renta${c===1?'':'s'}.\n\nSe quitará del formulario y del inventario, pero el nombre seguirá visible en esas rentas pasadas para no dañar tus registros.\n\n¿Continuar?`}
 };
 
 // ─── DEFAULT CATEGORIES & ITEMS ─────────────────────────────────────────────
@@ -595,6 +681,13 @@ let refLat=null,refLon=null;
 const geoCache={};
 let geoQueue=[];
 let geoProcessing=false;
+// pricing / customers / retired
+let prices={};        // {itemKey: unitPrice}
+let customers={};     // {phoneDigits: {name,phone,address,lastUsed,count}}
+let retiredItems=[];  // [{k,cat,en,es}] tombstones — hidden from booking, kept for history
+let deliveryEnabled=false, editDeliveryEnabled=false;
+let quoteTouched=false, editQuoteTouched=false;
+let selectedCustomerKey=null;
 
 // ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
 // Using Firebase REST API (no SDK needed — pure fetch)
@@ -650,9 +743,17 @@ async function loadFromFirebase(){
       if(data.archived){
         archived=Array.isArray(data.archived)?data.archived:Object.values(data.archived||{});
       } else{archived=[];}
+      prices=data.prices||{};
+      customers=data.customers||{};
+      retiredItems=data.retiredItems?(Array.isArray(data.retiredItems)?data.retiredItems:Object.values(data.retiredItems)):[];
     } else {
       inventory=buildDefaultInventory();
-      rentals=[];customItems=[];
+      rentals=[];customItems=[];prices={};customers={};retiredItems=[];
+    }
+    // One-time backfill: seed the customer book from existing bookings
+    if(!Object.keys(customers).length&&(rentals.length||archived.length)){
+      const n=backfillCustomers();
+      if(n>0)pushData();
     }
     setSyncStatus('ok',T[lang].synced);
     renderActive();
@@ -669,7 +770,9 @@ function buildDefaultInventory(){
 
 async function pushData(){
   setSyncStatus('syncing',T[lang].syncing);
-  const ok=await fbSet('chs_app',{rentals,inventory,customItems,archived});
+  // PATCH, not PUT. A PUT overwrites the whole chs_app node, which means an
+  // older client (or a future key we forget to list here) silently wipes data.
+  const ok=await fbPatch('chs_app',{rentals,inventory,customItems,archived,prices,customers,retiredItems});
   if(ok)setSyncStatus('ok',T[lang].synced);
   else setSyncStatus('error',T[lang].syncErr);
 }
@@ -685,8 +788,9 @@ function startPolling(){
       const data=await fbGet('chs_app');
       if(!data)return;
       let changed=false;
+      let newR=rentals;   // hoisted — was block-scoped, threw ReferenceError below
       if(data.rentals){
-        const newR=Array.isArray(data.rentals)?data.rentals:Object.values(data.rentals||{});
+        newR=Array.isArray(data.rentals)?data.rentals:Object.values(data.rentals||{});
         if(JSON.stringify(newR)!==JSON.stringify(rentals)){rentals=newR;changed=true;}
       }
       if(data.inventory){
@@ -696,6 +800,16 @@ function startPolling(){
       if(data.customItems){
         const newC=Array.isArray(data.customItems)?data.customItems:Object.values(data.customItems||{});
         if(JSON.stringify(newC)!==JSON.stringify(customItems)){customItems=newC;changed=true;}
+      }
+      if(data.archived){
+        const newA=Array.isArray(data.archived)?data.archived:Object.values(data.archived||{});
+        if(JSON.stringify(newA)!==JSON.stringify(archived)){archived=newA;changed=true;}
+      }
+      if(data.prices&&JSON.stringify(data.prices)!==JSON.stringify(prices)){prices=data.prices;changed=true;}
+      if(data.customers&&JSON.stringify(data.customers)!==JSON.stringify(customers)){customers=data.customers;changed=true;}
+      if(data.retiredItems){
+        const newRt=Array.isArray(data.retiredItems)?data.retiredItems:Object.values(data.retiredItems);
+        if(JSON.stringify(newRt)!==JSON.stringify(retiredItems)){retiredItems=newRt;changed=true;}
       }
       if(changed){
         checkForNewRentals(newR);
@@ -707,7 +821,48 @@ function startPolling(){
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
-function allItems(){return [...DEFAULT_ITEMS,...customItems];}
+function isRetired(k){return retiredItems.some(r=>r.k===k);}
+// Bookable items (retired excluded)
+function allItems(){return [...DEFAULT_ITEMS,...customItems].filter(i=>!isRetired(i.k));}
+// Every item that has ever existed — used for rendering historical rentals
+function allItemsEver(){return [...DEFAULT_ITEMS,...customItems,...retiredItems];}
+function itemDef(k){return allItemsEver().find(i=>i.k===k)||null;}
+function itemsForCatEver(catK){return allItemsEver().filter(i=>i.cat===catK);}
+// ─── PRICING HELPERS ───
+function getPrice(k){const v=prices[k];return v!=null&&!isNaN(v)?+v:0;}
+function money(n){return '$'+(Math.round((+n||0)*100)/100).toFixed(2);}
+function equipSubtotal(eq){let s=0;if(!eq)return 0;for(const k in eq){s+=(eq[k]||0)*getPrice(k);}return s;}
+function rentalTotal(r){return (parseFloat(r.quote)||0)+(parseFloat(r.deliveryFee)||0);}
+function rentalBalance(r){return Math.max(0,rentalTotal(r)-((r.depositEnabled?parseFloat(r.depositAmt)||0:0)));}
+// ─── CUSTOMER HELPERS ───
+function phoneKey(p){return (p||'').replace(/\D/g,'').slice(-10);}
+function upsertCustomer(name,phone,address){
+  const k=phoneKey(phone);
+  if(k.length!==10||!name)return;
+  const prev=customers[k]||{count:0};
+  customers[k]={name,phone,address:address||prev.address||'',lastUsed:Date.now(),count:(prev.count||0)+1};
+}
+function backfillCustomers(){
+  let added=0;
+  [...rentals,...archived].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(r=>{
+    const k=phoneKey(r.phone);
+    if(k.length!==10||!r.name)return;
+    const prev=customers[k];
+    if(!prev){customers[k]={name:r.name,phone:r.phone,address:r.address||'',lastUsed:Date.now(),count:1};added++;}
+    else{prev.count=(prev.count||0)+1;if(r.address&&!prev.address)prev.address=r.address;}
+  });
+  return added;
+}
+function customerList(){
+  return Object.entries(customers).map(([k,c])=>({key:k,...c}))
+    .sort((a,b)=>(b.lastUsed||0)-(a.lastUsed||0));
+}
+function knownAddresses(){
+  const seen=new Map();
+  customerList().forEach(c=>{if(c.address&&!seen.has(c.address.toLowerCase()))seen.set(c.address.toLowerCase(),c.address);});
+  [...rentals,...archived].forEach(r=>{if(r.address&&!seen.has(r.address.toLowerCase()))seen.set(r.address.toLowerCase(),r.address);});
+  return [...seen.values()];
+}
 function getCat(k){return DEFAULT_CATS.find(c=>c.k===k);}
 function iname(item){return lang==='en'?item.en:item.es;}
 function cname(cat){return lang==='en'?cat.en:cat.es;}
@@ -737,7 +892,7 @@ function fmtDate(ds){
 function fmtEquip(eq){
   const parts=[];
   DEFAULT_CATS.forEach(cat=>{
-    itemsForCat(cat.k).forEach(i=>{
+    itemsForCatEver(cat.k).forEach(i=>{
       const v=eq&&eq[i.k]?eq[i.k]:0;
       if(v>0)parts.push(cat.type==='qty'?`${iname(i)} x${v}`:iname(i));
     });
@@ -876,7 +1031,7 @@ function renderDayPreview(){
   dr.forEach(r=>{
     const tags=fmtEquip(r.equipment).map(s=>`<span class="tag">${s}</span>`).join('');
     const mapsUrl=r.address?`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(r.address)}`:'';
-    const balanceDue=Math.max(0,(r.quote||0)-((r.depositEnabled?r.depositAmt:0)||0));
+    const balanceDue=rentalBalance(r);
     html+=`<div class="prev-rental${r.delivered?' rcard-delivered':''}" onclick="openSheet('${r.id}')">
       <div style="display:flex;align-items:center;justify-content:space-between"><div class="prev-name">${r.name}</div><button onclick="event.stopPropagation();openEditRental('${r.id}')" style="background:transparent;border:none;cursor:pointer;font-size:16px;padding:2px 4px">✏️</button></div>
       <div class="prev-phone">${r.phone}</div>
@@ -987,12 +1142,14 @@ function renderInv(){
       const qty=getInvQty(item.k);
       if(cat.type==='check'){
         const st=qty>0?'avail':'out';
-        const stTxt=qty>0?T[lang].available:(lang==='en'?'Not available':'No disponible');
+        const priceTxt=getPrice(item.k)>0?` · ${money(getPrice(item.k))}`:'';
+        const stTxt=(qty>0?T[lang].available:(lang==='en'?'Not available':'No disponible'))+priceTxt;
         itemsHtml+=`<div class="inv-item-row"><span class="inv-item-name">${iname(item)}</span><span class="inv-badge ${st}">${stTxt}</span></div>`;
       } else {
         const tot=item.def;const pct=tot>0?qty/tot:1;
         const cls=pct<=0?'out':pct<=0.25?'low':'';
-        itemsHtml+=`<div class="inv-item-row"><span class="inv-item-name">${iname(item)}</span><div class="inv-qty-display"><div class="inv-num${cls?' '+cls:''}">${qty}</div><div class="inv-sub">${T[lang].of} ${tot}</div></div></div>`;
+        const pTag=getPrice(item.k)>0?`<span style="font-size:10px;font-weight:800;color:var(--orange);margin-left:6px">${money(getPrice(item.k))}/${T[lang].eachLbl}</span>`:'';
+        itemsHtml+=`<div class="inv-item-row"><span class="inv-item-name">${iname(item)}${pTag}</span><div class="inv-qty-display"><div class="inv-num${cls?' '+cls:''}">${qty}</div><div class="inv-sub">${T[lang].of} ${tot}</div></div></div>`;
       }
     });
     block.innerHTML=`<button class="acc-hdr" id="invh-${cat.k}" onclick="toggleInvAcc('${cat.k}')"><div class="acc-left"><div class="acc-icon">${cat.icon}</div><div><div class="acc-name">${cname(cat)}</div><div class="acc-meta">${badge?badge+' avail':items.length+' items'}</div></div></div><span class="acc-arrow">▼</span></button><div class="acc-body" id="invb-${cat.k}">${itemsHtml}</div>`;
@@ -1058,12 +1215,14 @@ function openSheet(id){
   <div class="drow"><span class="dlbl">${t.addr}</span><span class="dval">${r.address?`<div style="display:flex;align-items:flex-start;gap:8px"><span style="font-size:12px;color:var(--tmid);font-weight:600;flex:1;line-height:1.4">${r.address}</span><a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(r.address)}" target="_blank" style="flex-shrink:0;background:rgba(242,101,34,0.1);border:1.5px solid rgba(242,101,34,0.25);color:var(--orange);font-size:11px;font-weight:800;padding:4px 9px;border-radius:20px;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:3px">📍 Maps</a></div>`:'—'}</span></div>
   <div class="drow"><span class="dlbl">${t.equip}</span><span class="dval"><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">${tags||'—'}</div></span></div>
   ${r.notes?`<div class="drow"><span class="dlbl">${t.notes}</span><span class="dval">${r.notes}</span></div>`:''}
-  ${r.quote>0?`<div style="margin-top:12px;background:var(--off);border-radius:12px;padding:12px 14px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--tlight)">${lang==='en'?'TOTAL QUOTE':'TOTAL'}</span><span style="font-size:15px;font-weight:900;color:var(--navy)">$${parseFloat(r.quote).toFixed(2)}</span></div>
+  ${rentalTotal(r)>0?`<div style="margin-top:12px;background:var(--off);border-radius:12px;padding:12px 14px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--tlight)">${t.equipLbl.toUpperCase()}</span><span style="font-size:14px;font-weight:800;color:var(--navy)">${money(r.quote)}</span></div>
+    ${(parseFloat(r.deliveryFee)||0)>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:700;color:var(--tlight)">🚚 ${t.delivLbl.toUpperCase()}</span><span style="font-size:14px;font-weight:800;color:var(--navy)">${money(r.deliveryFee)}</span></div>`:''}
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;border-top:1px solid var(--border);padding-top:6px"><span style="font-size:12px;font-weight:800;color:var(--tlight)">${t.totalLbl}</span><span style="font-size:15px;font-weight:900;color:var(--navy)">${money(rentalTotal(r))}</span></div>
     ${r.depositEnabled?`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--green)">${lang==='en'?'DEPOSIT PAID':'DEPÓSITO'}</span><div style="text-align:right"><span style="font-size:13px;font-weight:800;color:var(--green)">−$${parseFloat(r.depositAmt||0).toFixed(2)}</span>${r.depositMethod?`<div style="font-size:11px;color:var(--green);opacity:0.8">${{cash:'💵 Cash',cashapp:'📱 Cash App',zelle:'💙 Zelle',applepay:'🍎 Apple Pay'}[r.depositMethod]||r.depositMethod}</div>`:''}</div></div>`:''}
     <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between">
-      <span style="font-size:13px;font-weight:800;color:${(r.quote-( r.depositEnabled?r.depositAmt:0))<=0?'#27ae60':'#f39c12'}">${(r.quote-(r.depositEnabled?r.depositAmt:0))<=0?(lang==='en'?'PAID IN FULL ✓':'PAGADO ✓'):(lang==='en'?'BALANCE DUE':'SALDO')}</span>
-      <span style="font-size:16px;font-weight:900;color:${(r.quote-(r.depositEnabled?r.depositAmt:0))<=0?'#27ae60':'#f39c12'}">$${Math.max(0,r.quote-(r.depositEnabled?r.depositAmt:0)).toFixed(2)}</span>
+      <span style="font-size:13px;font-weight:800;color:${rentalBalance(r)<=0?'#27ae60':'#f39c12'}">${rentalBalance(r)<=0?(lang==='en'?'PAID IN FULL ✓':'PAGADO ✓'):(lang==='en'?'BALANCE DUE':'SALDO')}</span>
+      <span style="font-size:16px;font-weight:900;color:${rentalBalance(r)<=0?'#27ae60':'#f39c12'}">${money(rentalBalance(r))}</span>
     </div>
   </div>`:''}
   <button class="del-btn" onclick="delRental('${r.id}')">${lang==='en'?'Delete Rental':'Eliminar Renta'}</button>
@@ -1166,11 +1325,13 @@ function toggleCheck(k){
   if(isBookedOn(k,ds))return;
   eqQty[k]=eqQty[k]>0?0:1;
   const cb=document.getElementById('cb-'+k);
+  setTimeout(renderSuggested,0);
   if(cb)cb.className='acc-check'+(eqQty[k]>0?' checked':'');
   updateAccMeta(k);
 }
 
 function chQty(k,d){
+  setTimeout(renderSuggested,0);
   const ds=document.getElementById('inp-date').value;
   const avail=ds?getAvailOnDate(ds):inventory;
   const max=avail[k]!=null?avail[k]:getInvQty(k);
@@ -1181,6 +1342,7 @@ function chQty(k,d){
 }
 
 function setQtyDirect(k,val,max){
+  setTimeout(renderSuggested,0);
   const v=Math.max(0,Math.min(parseInt(val)||0,max));
   eqQty[k]=v;
   const el=document.getElementById('qv-'+k);
@@ -1214,11 +1376,12 @@ function renderAccordion(){
         const checked=(eqQty[item.k]||0)>0;
         const statusTxt=!ds?'—':booked?T[lang].bookedOn:T[lang].available;
         const statusCls=!ds?'no-date':booked?'booked-lbl':'avail';
-        itemsHtml+=`<div class="acc-item${booked?' booked':''}" onclick="toggleCheck('${item.k}')"><div class="acc-check${checked?' checked':''}" id="cb-${item.k}"></div><div class="acc-item-info"><div class="acc-item-name">${iname(item)}</div><div class="acc-item-status ${statusCls}">${statusTxt}</div></div></div>`;
+        const pTag=getPrice(item.k)>0?`<span style="font-size:11px;font-weight:800;color:var(--orange);margin-left:6px">${money(getPrice(item.k))}</span>`:'';
+        itemsHtml+=`<div class="acc-item${booked?' booked':''}" onclick="toggleCheck('${item.k}')"><div class="acc-check${checked?' checked':''}" id="cb-${item.k}"></div><div class="acc-item-info"><div class="acc-item-name">${iname(item)}${pTag}</div><div class="acc-item-status ${statusCls}">${statusTxt}</div></div></div>`;
       } else {
         const maxA=avail?avail[item.k]:getInvQty(item.k);
         const cur=eqQty[item.k]||0;
-        const availTxt=ds?`${maxA} ${T[lang].avail}`:`${getInvQty(item.k)} ${T[lang].avail}`;
+        const availTxt=(ds?`${maxA} ${T[lang].avail}`:`${getInvQty(item.k)} ${T[lang].avail}`)+(getPrice(item.k)>0?` · ${money(getPrice(item.k))}/${T[lang].eachLbl}`:'');
         itemsHtml+=`<div class="acc-qty-row"><div class="acc-qty-info"><div class="acc-item-name">${iname(item)}</div><div class="acc-item-status avail">${availTxt}</div></div><div class="qty-ctrl"><button class="qty-btn" onclick="chQty('${item.k}',-1)">−</button><input type="number" class="qty-edit" id="qv-${item.k}" value="${cur}" min="0" max="${maxA}" oninput="setQtyDirect('${item.k}',this.value,${maxA})"><button class="qty-btn" onclick="chQty('${item.k}',1)">+</button></div></div>`;
       }
     });
@@ -1243,7 +1406,12 @@ function renderAddForm(){
   const notice=document.getElementById('date-notice');
   if(!ds){notice.style.display='block';notice.textContent=t.pickDate;}
   else{notice.style.display='none';}
+  const dl=document.getElementById('lbl-deliv-chk');if(dl)dl.textContent=t.delivChk;
+  const qh=document.getElementById('lbl-quote-hint');if(qh)qh.textContent=t.equipLbl;
+  const dvw=document.getElementById('deliv-amount-wrap');if(dvw)dvw.style.display=deliveryEnabled?'flex':'none';
   renderAccordion();
+  renderSuggested();
+  renderCustChip();
 }
 
 async function submitRental(){
@@ -1256,13 +1424,21 @@ async function submitRental(){
   allItems().forEach(i=>{equipment[i.k]=eqQty[i.k]||0;if(equipment[i.k]>0)has=true;});
   if(!has){alert(lang==='en'?'Select at least one item.':'Selecciona al menos un artículo.');return;}
   const quote=parseFloat(document.getElementById('inp-quote')?.value)||0;
+  const deliveryFee=deliveryEnabled?(parseFloat(document.getElementById('inp-delivery')?.value)||0):0;
   const depositAmt=depositEnabled?(parseFloat(document.getElementById('inp-deposit')?.value)||0):0;
-  const depositMethod=depositEnabled?(document.getElementById('inp-dep-method')?.value||'cash'):'';rentals.push({id:Date.now().toString(),name,phone,address:addr,date,equipment,notes:document.getElementById('inp-notes').value.trim(),quote,depositEnabled,depositAmt,depositMethod});
+  const depositMethod=depositEnabled?(document.getElementById('inp-dep-method')?.value||'cash'):'';
+  rentals.push({id:Date.now().toString(),name,phone,address:addr,date,equipment,notes:document.getElementById('inp-notes').value.trim(),quote,deliveryEnabled,deliveryFee,depositEnabled,depositAmt,depositMethod});
   lastKnownRentalIds.add(rentals[rentals.length-1].id);
+  upsertCustomer(name,phone,addr);
   await pushData();
   ['inp-name','inp-phone','inp-addr','inp-notes','inp-quote'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('inp-date').value='';
-  depositEnabled=false;
+  depositEnabled=false;deliveryEnabled=false;quoteTouched=false;selectedCustomerKey=null;
+  renderCustChip();
+  const dvc=document.getElementById('deliv-check');if(dvc)dvc.className='acc-check';
+  const dvw=document.getElementById('deliv-amount-wrap');if(dvw)dvw.style.display='none';
+  const dvi=document.getElementById('inp-delivery');if(dvi)dvi.value='0';
+  const sb=document.getElementById('sugg-box');if(sb)sb.style.display='none';
   const dc=document.getElementById('dep-check');if(dc)dc.className='acc-check';
   const dw=document.getElementById('dep-amount-wrap');if(dw)dw.style.display='none';const dmw=document.getElementById('dep-method-wrap');if(dmw)dmw.style.display='none';
   const bb=document.getElementById('balance-box');if(bb)bb.style.display='none';
@@ -1272,30 +1448,122 @@ async function submitRental(){
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
+let setOpenCats=new Set();   // collapsed by default
+let retiredOpen=false;
+
 function renderSettings(){
   const t=T[lang];
   document.getElementById('set-title').textContent=t.setTitle;
-  document.getElementById('set-sub').textContent=t.setSub;
+  document.getElementById('set-sub').textContent=t.setSub2;
   document.getElementById('save-btn').textContent=t.saveInv;
   document.getElementById('new-item-lbl').textContent=t.newItem;
   const body=document.getElementById('set-body');body.innerHTML='';
+
   DEFAULT_CATS.forEach(cat=>{
     const items=itemsForCat(cat.k);
-    if(!items.length)return;
-    const lbl=document.createElement('div');lbl.className='set-cat-lbl';lbl.textContent=`${cat.icon} ${cname(cat)}`;body.appendChild(lbl);
-    items.forEach(item=>{
-      const row=document.createElement('div');row.className='set-item';
-      const isCustom=customItems.some(c=>c.k===item.k);
-      const qty=getInvQty(item.k);
-      const isQtyType=getCat(item.cat)&&getCat(item.cat).type==='qty';
-      if(isQtyType){
-        row.innerHTML=`<span class="set-item-name">${iname(item)}</span><div class="set-qty-ctrl"><button class="set-qty-btn" onclick="adjSetQty('${item.k}',-1)">−</button><input type="number" class="qty-edit" id="sq-${item.k}" value="${qty}" min="0" max="10000" style="width:72px;font-size:14px;padding:5px 6px" oninput="setInvQtyDirect('${item.k}',this.value)"><button class="set-qty-btn" onclick="adjSetQty('${item.k}',1)">+</button>${isCustom?`<button class="set-del-btn" onclick="removeCustomItem('${item.k}')" title="Remove">✕</button>`:''}</div>`;
-      } else {
-        row.innerHTML=`<span class="set-item-name">${iname(item)}</span><div class="set-qty-ctrl"><button class="set-qty-btn" onclick="adjSetQty('${item.k}',-1)">−</button><span class="set-qty-val" id="sq-${item.k}">${qty}</span><button class="set-qty-btn" onclick="adjSetQty('${item.k}',1)">+</button>${isCustom?`<button class="set-del-btn" onclick="removeCustomItem('${item.k}')" title="Remove">✕</button>`:''}</div>`;
-      }
-      body.appendChild(row);
+    const isOpen=setOpenCats.has(cat.k);
+    const isQtyType=cat.type==='qty';
+    const priced=items.filter(i=>getPrice(i.k)>0).length;
+
+    const block=document.createElement('div');
+    block.className='acc-block';
+
+    const hdr=document.createElement('button');
+    hdr.className='acc-hdr'+(isOpen?' open':'');
+    hdr.innerHTML=`<div class="acc-left"><div class="acc-icon">${cat.icon}</div><div>
+      <div class="acc-name">${cname(cat)}</div>
+      <div class="acc-meta">${items.length} ${lang==='en'?'items':'artículos'} · ${priced}/${items.length} ${lang==='en'?'priced':'con precio'}</div>
+    </div></div><span class="acc-arrow" style="transition:transform 0.2s;transform:rotate(${isOpen?'180':'0'}deg)">▼</span>`;
+    hdr.addEventListener('click',()=>{
+      if(setOpenCats.has(cat.k))setOpenCats.delete(cat.k); else setOpenCats.add(cat.k);
+      renderSettings();
     });
+    block.appendChild(hdr);
+
+    const bodyDiv=document.createElement('div');
+    bodyDiv.className='acc-body'+(isOpen?' open':'');
+    bodyDiv.style.padding='10px';
+
+    items.forEach(item=>{
+      const qty=getInvQty(item.k);
+      const price=getPrice(item.k);
+      const row=document.createElement('div');
+      row.className='set-item';
+      row.style.flexDirection='column';
+      row.style.alignItems='stretch';
+      row.style.gap='8px';
+
+      const qtyCtrl=isQtyType
+        ? `<button class="set-qty-btn" onclick="adjSetQty('${item.k}',-1)">−</button><input type="number" class="qty-edit" id="sq-${item.k}" value="${qty}" min="0" max="10000" style="width:64px;font-size:14px;padding:5px 4px" oninput="setInvQtyDirect('${item.k}',this.value)"><button class="set-qty-btn" onclick="adjSetQty('${item.k}',1)">+</button>`
+        : `<button class="set-qty-btn" onclick="adjSetQty('${item.k}',-1)">−</button><span class="set-qty-val" id="sq-${item.k}" style="min-width:24px;text-align:center">${qty}</span><button class="set-qty-btn" onclick="adjSetQty('${item.k}',1)">+</button>`;
+
+      row.innerHTML=`
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span class="set-item-name">${iname(item)}</span>
+          <button class="set-del-btn" onclick="deleteInvItem('${item.k}')" title="Delete">✕</button>
+        </div>
+        <div class="set-row2">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+            <span class="mini-lbl">${T[lang].priceLbl}</span>
+            <div class="set-price-wrap">
+              <span style="font-size:13px;font-weight:800;color:var(--tlight)">$</span>
+              <input type="number" id="sp-${item.k}" value="${price>0?price:''}" placeholder="0.00" min="0" step="0.01" oninput="setItemPrice('${item.k}',this.value)">
+              <span style="font-size:10px;font-weight:700;color:var(--tlight)">/${T[lang].eachLbl}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+            <span class="mini-lbl">${T[lang].qtyLbl}</span>
+            <div class="set-qty-ctrl">${qtyCtrl}</div>
+          </div>
+        </div>`;
+      bodyDiv.appendChild(row);
+    });
+
+    const addBtn=document.createElement('button');
+    addBtn.className='cat-add-btn';
+    addBtn.textContent='+ '+T[lang].addToCat;
+    addBtn.addEventListener('click',()=>openNewItem(cat.k));
+    bodyDiv.appendChild(addBtn);
+
+    block.appendChild(bodyDiv);
+    body.appendChild(block);
   });
+
+  renderRetired();
+}
+
+function renderRetired(){
+  const wrap=document.getElementById('retired-body');
+  if(!wrap)return;
+  wrap.innerHTML='';
+  if(!retiredItems.length)return;
+  const block=document.createElement('div');
+  block.className='acc-block';
+  block.style.marginTop='14px';
+  const hdr=document.createElement('button');
+  hdr.className='acc-hdr'+(retiredOpen?' open':'');
+  hdr.innerHTML=`<div class="acc-left"><div class="acc-icon">🗄️</div><div>
+    <div class="acc-name">${T[lang].retiredLbl}</div>
+    <div class="acc-meta">${retiredItems.length}</div></div></div>
+    <span class="acc-arrow" style="transition:transform 0.2s;transform:rotate(${retiredOpen?'180':'0'}deg)">▼</span>`;
+  hdr.addEventListener('click',()=>{retiredOpen=!retiredOpen;renderRetired();});
+  block.appendChild(hdr);
+  const bodyDiv=document.createElement('div');
+  bodyDiv.className='acc-body'+(retiredOpen?' open':'');
+  bodyDiv.style.padding='10px';
+  const note=document.createElement('div');
+  note.style.cssText='font-size:11px;color:var(--tlight);font-weight:600;margin-bottom:8px;line-height:1.4';
+  note.textContent=T[lang].retiredNote;
+  bodyDiv.appendChild(note);
+  retiredItems.forEach(item=>{
+    const row=document.createElement('div');
+    row.className='retired-row';
+    row.innerHTML=`<span style="font-size:13px;font-weight:700;color:var(--tmid)">${iname(item)}</span>
+      <button style="background:rgba(26,45,90,0.08);border:1.5px solid rgba(26,45,90,0.2);color:var(--navy);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif" onclick="restoreItem('${item.k}')">↩ ${T[lang].restoreBtn}</button>`;
+    bodyDiv.appendChild(row);
+  });
+  block.appendChild(bodyDiv);
+  wrap.appendChild(block);
 }
 
 function adjSetQty(k,d){
@@ -1307,39 +1575,83 @@ function adjSetQty(k,d){
 }
 
 function setInvQtyDirect(k,val){
-  const v=Math.max(0,Math.min(parseInt(val)||0,10000));
-  inventory[k]=v;
+  inventory[k]=Math.max(0,Math.min(parseInt(val)||0,10000));
+}
+
+function setItemPrice(k,val){
+  const v=parseFloat(val);
+  if(isNaN(v)||v<=0)delete prices[k];
+  else prices[k]=Math.round(v*100)/100;
 }
 
 async function saveInv(){
   await pushData();
-  alert(lang==='en'?'✅ Inventory saved & synced!':'✅ ¡Inventario guardado y sincronizado!');
+  alert(lang==='en'?'✅ Inventory & pricing saved!':'✅ ¡Inventario y precios guardados!');
   renderInv();
 }
 
-async function removeCustomItem(k){
-  if(!confirm(T[lang].deleteItem))return;
-  customItems=customItems.filter(i=>i.k!==k);
-  delete inventory[k];
-  await pushData();
-  renderSettings();
-  renderInv();
+// How many bookings (active + archived) reference this item?
+function itemRefCount(k){
+  return [...rentals,...archived].filter(r=>r.equipment&&(r.equipment[k]||0)>0).length;
 }
+
+// "Delete completely" — but never at the cost of corrupting past bookings.
+//  · unused custom item  -> gone for good, no trace
+//  · unused default item -> gone from the app (can't touch the const, so tombstoned silently)
+//  · item used on a past booking -> tombstoned so its NAME still renders on that booking
+async function deleteInvItem(k){
+  const item=itemDef(k);
+  if(!item)return;
+  const refs=itemRefCount(k);
+  const isCustom=customItems.some(c=>c.k===k);
+  if(refs>0){
+    if(!confirm(T[lang].softDel(iname(item),refs)))return;
+  } else {
+    if(!confirm(T[lang].hardDel(iname(item))))return;
+  }
+  delete inventory[k];
+  delete prices[k];
+  if(isCustom&&refs===0){
+    customItems=customItems.filter(i=>i.k!==k);          // truly gone
+  } else {
+    customItems=customItems.filter(i=>i.k!==k);
+    if(!isRetired(k))retiredItems.push({k:item.k,cat:item.cat,en:item.en,es:item.es});
+  }
+  await pushData();
+  renderSettings();renderInv();
+}
+
+async function restoreItem(k){
+  const item=retiredItems.find(i=>i.k===k);
+  if(!item)return;
+  retiredItems=retiredItems.filter(i=>i.k!==k);
+  const isDefault=DEFAULT_ITEMS.some(d=>d.k===k);
+  if(!isDefault)customItems.push({k:item.k,cat:item.cat,en:item.en,es:item.es,def:0});
+  if(inventory[k]==null)inventory[k]=isDefault?(DEFAULT_ITEMS.find(d=>d.k===k).def||0):0;
+  await pushData();
+  renderSettings();renderInv();
+}
+
+// legacy alias
+async function removeCustomItem(k){return deleteInvItem(k);}
 
 // ─── NEW ITEM POPUP ───────────────────────────────────────────────────────────
-function openNewItem(){
+function openNewItem(preCat){
   const t=T[lang];
   document.getElementById('popup-title').textContent=t.newItem;
   document.getElementById('popup-sub').textContent=t.newItemSub;
   document.getElementById('popup-lbl-name').textContent=t.niName;
   document.getElementById('popup-lbl-sec').textContent=t.niSec;
   document.getElementById('popup-lbl-qty').textContent=t.niQty;
+  const plp=document.getElementById('popup-lbl-price');if(plp)plp.textContent=`${t.priceLbl} (${t.eachLbl})`;
   document.getElementById('popup-cancel-btn').textContent=t.cancel;
   document.getElementById('popup-save-btn').textContent=t.add;
   document.getElementById('popup-name').value='';
   document.getElementById('popup-qty').value='1';
   const sel=document.getElementById('popup-section');
   sel.innerHTML=DEFAULT_CATS.map(c=>`<option value="${c.k}">${c.icon} ${cname(c)}</option>`).join('');
+  if(preCat)sel.value=preCat;
+  const pp=document.getElementById('popup-price');if(pp)pp.value='';
   document.getElementById('popup-overlay').style.display='flex';
   setTimeout(()=>document.getElementById('popup-name').focus(),100);
 }
@@ -1352,12 +1664,14 @@ async function saveNewItem(){
   const name=document.getElementById('popup-name').value.trim();
   const catK=document.getElementById('popup-section').value;
   const qty=parseInt(document.getElementById('popup-qty').value)||0;
+  const price=parseFloat((document.getElementById('popup-price')||{}).value)||0;
   if(!name){alert(lang==='en'?'Enter a name.':'Ingresa un nombre.');return;}
   const k='custom_'+Date.now();
-  const cat=getCat(catK);
   const newItem={k,cat:catK,en:name,es:name,def:qty};
   customItems.push(newItem);
   inventory[k]=qty;
+  if(price>0)prices[k]=Math.round(price*100)/100;
+  setOpenCats.add(catK);
   await pushData();
   closeNewItem();
   renderSettings();
@@ -1365,53 +1679,214 @@ async function saveNewItem(){
 }
 
 // ─── ADDRESS AUTOCOMPLETE ─────────────────────────────────────────────────
-let addrTimeout=null;
-async function onAddrInput(val){
-  const box=document.getElementById('addr-suggestions');
-  if(!val||val.length<3){box.style.display='none';return;}
-  clearTimeout(addrTimeout);
-  addrTimeout=setTimeout(async()=>{
-    try{
-      // Biased around Dayton TX area — viewbox covers Dayton, Crosby, Liberty, Baytown, Huffman, Humble, East Houston
-      const viewbox='-95.4,29.5,-93.8,30.4'; // west,south,east,north
-      const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&countrycodes=us&limit=6&addressdetails=1&viewbox=${viewbox}&bounded=0`;
-      const res=await fetch(url,{headers:{'Accept-Language':'en'}});
-      const data=await res.json();
-      // Sort results — prefer ones inside our viewbox first
-      const [w,s,e,n]=viewbox.split(',').map(Number);
-      data.sort((a,b)=>{
-        const aIn=+a.lon>=w&&+a.lon<=e&&+a.lat>=s&&+a.lat<=n;
-        const bIn=+b.lon>=w&&+b.lon<=e&&+b.lat>=s&&+b.lat<=n;
-        return (bIn?1:0)-(aIn?1:0);
-      });
-      if(!data.length){box.style.display='none';return;}
-      box.innerHTML=data.slice(0,5).map(p=>{
-        // Format: Street, City, TX
-        const parts=p.display_name.split(',').map(x=>x.trim());
-        const street=parts[0]||'';
-        const city=parts.find(x=>['Dayton','Crosby','Liberty','Baytown','Huffman','Humble','Houston','Highlands','Channelview','Galena Park','La Marque','Deer Park','Pasadena','Cloverleaf','Barrett','Hardin','Barbers Hill','Mont Belvieu','Beach City','Anahuac','Cleveland'].some(c=>x.includes(c)))||parts[2]||'';
-        const state=parts.find(x=>x.includes('Texas')||x==='TX')||'TX';
-        const zip=parts.find(x=>/^\d{5}$/.test(x))||'';
-        const display=[street,city,state,zip].filter(Boolean).join(', ');
-        const safe=JSON.stringify(display).replace(/'/g,"\'");
-        return `<div class="addr-suggestion" onmousedown="event.preventDefault();selectAddr(${safe})" ontouchstart="event.preventDefault();selectAddr(${safe})" onclick="selectAddr(${safe})">${display}</div>`;
-      }).join('');
-      box.style.display='block';
-    }catch(e){box.style.display='none';}
-  },400);
+// Dayton, TX 77535 is the hub. Everything is filtered to a 40-mile radius.
+const HUB_LAT=30.0466, HUB_LON=-94.8880, RADIUS_MI=40;
+// ~40mi at this latitude: 0.58 deg lat, 0.67 deg lon
+const ADDR_VIEWBOX=`${(HUB_LON-0.67).toFixed(3)},${(HUB_LAT-0.58).toFixed(3)},${(HUB_LON+0.67).toFixed(3)},${(HUB_LAT+0.58).toFixed(3)}`;
+const addrLookupCache=new Map();   // query -> results
+let addrTimeout=null, editAddrTimeout=null;
+
+function withinRadius(lat,lon){
+  return haversine(HUB_LAT,HUB_LON,+lat,+lon)<=RADIUS_MI;
 }
+
+// Local-first: our own saved customers + past rentals. Free, instant, and it
+// covers repeat customers before we ever touch the network.
+function localAddrMatches(q){
+  const n=q.trim().toLowerCase();
+  if(n.length<2)return [];
+  return knownAddresses().filter(a=>a.toLowerCase().includes(n)).slice(0,4);
+}
+
+async function nominatimSearch(q){
+  const key=q.trim().toLowerCase();
+  if(addrLookupCache.has(key))return addrLookupCache.get(key);
+  const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`
+    +`&countrycodes=us&limit=10&addressdetails=1&viewbox=${ADDR_VIEWBOX}&bounded=1`;
+  const res=await fetch(url,{headers:{'Accept-Language':'en'}});
+  if(!res.ok)throw new Error('geocoder '+res.status);
+  const data=await res.json();
+  const out=data.filter(p=>withinRadius(p.lat,p.lon)).map(p=>{
+    const a=p.address||{};
+    const num=a.house_number||'';
+    const road=a.road||a.pedestrian||a.hamlet||'';
+    const street=(num&&road)?num+' '+road:(road||p.display_name.split(',')[0]);
+    const city=a.city||a.town||a.village||a.municipality||a.county||'';
+    const state=(a.state==='Texas')?'TX':(a.state||'TX');
+    const zip=a.postcode||'';
+    return {
+      full:[street,city,state,zip].filter(Boolean).join(', '),
+      street, sub:[city,state,zip].filter(Boolean).join(', '),
+      dist:haversine(HUB_LAT,HUB_LON,+p.lat,+p.lon)
+    };
+  }).filter(r=>r.street);
+  // de-dupe on the formatted string, nearest first
+  const seen=new Set(); const uniq=[];
+  out.sort((a,b)=>a.dist-b.dist).forEach(r=>{if(!seen.has(r.full)){seen.add(r.full);uniq.push(r);}});
+  addrLookupCache.set(key,uniq);
+  return uniq;
+}
+
+// Renders suggestions using real DOM nodes + addEventListener.
+// The old version built inline onclick="" strings with JSON.stringify(), whose
+// double quotes terminated the HTML attribute early. Every suggestion was dead.
+function paintAddrSuggestions(boxId,inputId,rows,onPick){
+  const box=document.getElementById(boxId);
+  if(!box)return;
+  box.innerHTML='';
+  if(!rows.length){box.style.display='none';return;}
+  rows.forEach(r=>{
+    const div=document.createElement('div');
+    div.className='addr-suggestion';
+    const top=document.createElement('div');
+    top.style.cssText='font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px';
+    top.textContent=r.street;
+    if(r.saved){
+      const chip=document.createElement('span');
+      chip.textContent='★ '+T[lang].savedAddr;
+      chip.style.cssText='font-size:9px;font-weight:800;color:var(--orange);background:rgba(242,101,34,0.1);padding:1px 6px;border-radius:20px;flex-shrink:0';
+      top.appendChild(chip);
+    }
+    div.appendChild(top);
+    if(r.sub){
+      const sub=document.createElement('div');
+      sub.style.cssText='font-size:11px;color:var(--tlight);margin-top:1px';
+      sub.textContent=r.sub+(r.dist!=null?` · ${r.dist.toFixed(1)} mi`:'');
+      div.appendChild(sub);
+    }
+    // mousedown fires before the input's blur, so the value lands correctly
+    const pick=e=>{e.preventDefault();e.stopPropagation();onPick(r.full);};
+    div.addEventListener('mousedown',pick);
+    div.addEventListener('touchend',pick);
+    box.appendChild(div);
+  });
+  box.style.display='block';
+}
+
+function splitLocal(a){
+  const parts=a.split(',').map(x=>x.trim());
+  return {full:a,street:parts[0]||a,sub:parts.slice(1).join(', '),saved:true,dist:null};
+}
+
+function makeAddrHandler(boxId,inputId,setter,timerRef){
+  return function(val){
+    const box=document.getElementById(boxId);
+    if(!val||val.trim().length<2){if(box)box.style.display='none';return;}
+    // instant local hits
+    const local=localAddrMatches(val).map(splitLocal);
+    if(local.length)paintAddrSuggestions(boxId,inputId,local,setter);
+    clearTimeout(timerRef.t);
+    timerRef.t=setTimeout(async()=>{
+      if(val.trim().length<4)return;
+      try{
+        const remote=await nominatimSearch(val);
+        const seen=new Set(local.map(l=>l.full.toLowerCase()));
+        const merged=[...local,...remote.filter(r=>!seen.has(r.full.toLowerCase()))].slice(0,6);
+        paintAddrSuggestions(boxId,inputId,merged,setter);
+      }catch(e){
+        if(!local.length&&box)box.style.display='none';
+      }
+    },700);   // Nominatim asks for <=1 req/sec. Be a good citizen.
+  };
+}
+
+const _addrTimer={t:null}, _editAddrTimer={t:null};
 
 function selectAddr(addr){
-  document.getElementById('inp-addr').value=addr;
-  document.getElementById('addr-suggestions').style.display='none';
+  const el=document.getElementById('inp-addr');
+  if(el)el.value=addr;
+  const b=document.getElementById('addr-suggestions');if(b)b.style.display='none';
+}
+function selectEditAddr(addr){
+  const el=document.getElementById('edit-addr');
+  if(el)el.value=addr;
+  const b=document.getElementById('edit-addr-suggestions');if(b)b.style.display='none';
 }
 
-// Close suggestions when tapping elsewhere
-document.addEventListener('touchstart',function(e){
-  const box=document.getElementById('addr-suggestions');
-  const inp=document.getElementById('inp-addr');
-  if(box&&inp&&!box.contains(e.target)&&e.target!==inp){box.style.display='none';}
-},{passive:true});
+const _onAddrInput=makeAddrHandler('addr-suggestions','inp-addr',selectAddr,_addrTimer);
+const _onEditAddrInput=makeAddrHandler('edit-addr-suggestions','edit-addr',selectEditAddr,_editAddrTimer);
+function onAddrInput(v){_onAddrInput(v);}
+function onEditAddrInput(v){_onEditAddrInput(v);}
+
+// Close suggestion boxes when tapping elsewhere
+const SUGG_BOXES=[
+  ['addr-suggestions',['inp-addr']],
+  ['edit-addr-suggestions',['edit-addr']],
+  ['cust-suggestions',['inp-name','inp-phone']],
+];
+['touchstart','mousedown'].forEach(evt=>{
+  document.addEventListener(evt,function(e){
+    SUGG_BOXES.forEach(([bId,inputIds])=>{
+      const box=document.getElementById(bId);
+      if(!box||box.style.display==='none')return;
+      if(box.contains(e.target))return;
+      if(inputIds.some(id=>e.target===document.getElementById(id)))return;
+      box.style.display='none';
+    });
+  },{passive:true});
+});
+
+// ─── CUSTOMER MEMORY / AUTOFILL ───────────────────────────────────────────
+function matchCustomers(q){
+  const n=q.trim().toLowerCase();
+  const digits=q.replace(/\D/g,'');
+  if(n.length<2&&digits.length<3)return [];
+  return customerList().filter(c=>{
+    const nameHit=c.name&&c.name.toLowerCase().includes(n);
+    const phoneHit=digits.length>=3&&phoneKey(c.phone).includes(digits);
+    return nameHit||phoneHit;
+  }).slice(0,5);
+}
+
+function onCustomerInput(){
+  const box=document.getElementById('cust-suggestions');
+  if(!box)return;
+  const nameV=(document.getElementById('inp-name').value||'').trim();
+  const phoneV=(document.getElementById('inp-phone').value||'').trim();
+  const q=document.activeElement&&document.activeElement.id==='inp-phone'?phoneV:nameV;
+  const hits=matchCustomers(q);
+  box.innerHTML='';
+  if(!hits.length||!q){box.style.display='none';return;}
+  hits.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='addr-suggestion';
+    div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="min-width:0"><div style="font-weight:800;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}</div>
+      <div style="font-size:11px;color:var(--tlight);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.phone}${c.address?' · '+c.address:''}</div></div>
+      <span style="font-size:9px;font-weight:800;color:var(--orange);background:rgba(242,101,34,0.1);padding:2px 7px;border-radius:20px;flex-shrink:0">${c.count||1}x</span></div>`;
+    const pick=e=>{e.preventDefault();e.stopPropagation();applyCustomer(c.key);};
+    div.addEventListener('mousedown',pick);
+    div.addEventListener('touchend',pick);
+    box.appendChild(div);
+  });
+  box.style.display='block';
+}
+
+function applyCustomer(key){
+  const c=customers[key];if(!c)return;
+  selectedCustomerKey=key;
+  document.getElementById('inp-name').value=c.name||'';
+  document.getElementById('inp-phone').value=c.phone||'';
+  document.getElementById('inp-addr').value=c.address||'';
+  document.getElementById('cust-suggestions').style.display='none';
+  document.getElementById('addr-suggestions').style.display='none';
+  renderCustChip();
+}
+
+function clearCustomer(){
+  selectedCustomerKey=null;
+  ['inp-name','inp-phone','inp-addr'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  renderCustChip();
+}
+
+function renderCustChip(){
+  const chip=document.getElementById('cust-chip');
+  if(!chip)return;
+  if(!selectedCustomerKey||!customers[selectedCustomerKey]){chip.style.display='none';return;}
+  const c=customers[selectedCustomerKey];
+  chip.style.display='flex';
+  chip.querySelector('#cust-chip-txt').textContent=`★ ${T[lang].returningCust} · ${c.count||1}x`;
+}
 
 // ─── AUTO CAPITALIZE NAME ─────────────────────────────────────────────────
 function autoCapName(el){
@@ -1456,6 +1931,11 @@ function openEditRental(id){
   document.getElementById('edit-notes').value=r.notes||'';
   // pricing
   const eq=document.getElementById('edit-quote');if(eq)eq.value=r.quote||'';
+  editQuoteTouched=true;   // never auto-stomp an existing rental's quote
+  editDeliveryEnabled=r.deliveryEnabled||false;
+  const evc=document.getElementById('edit-deliv-check');if(evc)evc.className='acc-check'+(editDeliveryEnabled?' checked':'');
+  const evw=document.getElementById('edit-deliv-amount-wrap');if(evw)evw.style.display=editDeliveryEnabled?'flex':'none';
+  const evi=document.getElementById('edit-delivery');if(evi)evi.value=r.deliveryFee||0;
   editDepositEnabled=r.depositEnabled||false;
   const ecb=document.getElementById('edit-dep-check');
   if(ecb)ecb.className='acc-check'+(editDepositEnabled?' checked':'');
@@ -1467,6 +1947,7 @@ function openEditRental(id){
   editEqQty={};
   allItems().forEach(i=>editEqQty[i.k]=(r.equipment&&r.equipment[i.k])||0);
   renderEditEquip();
+  renderEditSuggested();
   document.getElementById('edit-overlay').style.display='flex';
 }
 
@@ -1503,16 +1984,19 @@ function toggleEditCheck(k){
   editEqQty[k]=editEqQty[k]>0?0:1;
   const cb=document.getElementById('ecb-'+k);
   if(cb)cb.className='acc-check'+(editEqQty[k]>0?' checked':'');
+  renderEditSuggested();
 }
 
 function chEditQty(k,d,max){
   editEqQty[k]=Math.max(0,Math.min((editEqQty[k]||0)+d,max));
   const el=document.getElementById('eqv-'+k);if(el)el.value=editEqQty[k];
+  renderEditSuggested();
 }
 
 function setEditQtyDirect(k,val,max){
   editEqQty[k]=Math.max(0,Math.min(parseInt(val)||0,max));
   const el=document.getElementById('eqv-'+k);if(el)el.value=editEqQty[k];
+  renderEditSuggested();
 }
 
 async function saveEditRental(){
@@ -1523,11 +2007,15 @@ async function saveEditRental(){
   if(!name||!phone||!addr||!date){alert(lang==='en'?'Please fill in all fields.':'Por favor completa todos los campos.');return;}
   const idx=rentals.findIndex(r=>r.id===editingRentalId);
   if(idx===-1)return;
-  const equipment={};
+  // Start from what's already on the rental so retired items aren't silently wiped
+  const equipment={...(rentals[idx].equipment||{})};
   allItems().forEach(i=>equipment[i.k]=editEqQty[i.k]||0);
   const quote=parseFloat(document.getElementById('edit-quote')?.value)||0;
+  const deliveryFee=editDeliveryEnabled?(parseFloat(document.getElementById('edit-delivery')?.value)||0):0;
   const depositAmt=editDepositEnabled?(parseFloat(document.getElementById('edit-deposit')?.value)||0):0;
-  const editDepositMethod=editDepositEnabled?(document.getElementById('edit-dep-method')?.value||'cash'):'';rentals[idx]={...rentals[idx],name,phone,address:addr,date,equipment,notes:document.getElementById('edit-notes').value.trim(),quote,depositEnabled:editDepositEnabled,depositAmt,depositMethod:editDepositMethod};
+  const editDepositMethod=editDepositEnabled?(document.getElementById('edit-dep-method')?.value||'cash'):'';
+  rentals[idx]={...rentals[idx],name,phone,address:addr,date,equipment,notes:document.getElementById('edit-notes').value.trim(),quote,deliveryEnabled:editDeliveryEnabled,deliveryFee,depositEnabled:editDepositEnabled,depositAmt,depositMethod:editDepositMethod};
+  upsertCustomer(name,phone,addr);
   await pushData();
   document.getElementById('edit-overlay').style.display='none';
   renderActive();
@@ -1536,47 +2024,6 @@ async function saveEditRental(){
 function closeEditOverlay(e){
   if(e.target===document.getElementById('edit-overlay'))document.getElementById('edit-overlay').style.display='none';
 }
-
-// Edit address autocomplete
-let editAddrTimeout=null;
-async function onEditAddrInput(val){
-  const box=document.getElementById('edit-addr-suggestions');
-  if(!val||val.length<3){box.style.display='none';return;}
-  clearTimeout(editAddrTimeout);
-  editAddrTimeout=setTimeout(async()=>{
-    try{
-      const viewbox='-95.6,29.4,-94.2,30.5';
-      const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val+', TX')}&countrycodes=us&limit=8&addressdetails=1&viewbox=${viewbox}&bounded=0`;
-      const res=await fetch(url,{headers:{'Accept-Language':'en','User-Agent':'CHSPartyRentals/1.0'}});
-      const data=await res.json();
-      const [w,s,e,n]=viewbox.split(',').map(Number);
-      data.sort((a,b)=>{
-        const aIn=+a.lon>=w&&+a.lon<=e&&+a.lat>=s&&+a.lat<=n;
-        const bIn=+b.lon>=w&&+b.lon<=e&&+b.lat>=s&&+b.lat<=n;
-        return (bIn?1:0)-(aIn?1:0);
-      });
-      if(!data.length){box.style.display='none';return;}
-      box.innerHTML=data.slice(0,6).map(p=>{
-        const a=p.address||{};
-        const num=a.house_number||'';
-        const road=a.road||a.pedestrian||'';
-        const street=num&&road?num+' '+road:road||p.display_name.split(',')[0];
-        const city=a.city||a.town||a.village||a.county||'';
-        const state=a.state==='Texas'?'TX':a.state||'TX';
-        const zip=a.postcode||'';
-        const display=[street,city,state,zip].filter(Boolean).join(', ');
-        const safe=JSON.stringify(display).replace(/'/g,"\'");
-        return `<div class="addr-suggestion" onmousedown="event.preventDefault();selectEditAddr(${safe})" ontouchstart="event.preventDefault();selectEditAddr(${safe})" onclick="selectEditAddr(${safe})"><div style="font-weight:700;color:var(--navy)">${street}</div><div style="font-size:11px;color:var(--tlight);margin-top:1px">${[city,state,zip].filter(Boolean).join(', ')}</div></div>`;
-      }).join('');
-      box.style.display='block';
-    }catch(e){box.style.display='none';}
-  },350);
-}
-function selectEditAddr(addr){
-  document.getElementById('edit-addr').value=addr;
-  document.getElementById('edit-addr-suggestions').style.display='none';
-}
-
 
 // ─── PRICING ──────────────────────────────────────────────────────────────────
 let depositEnabled=false;
@@ -1593,15 +2040,86 @@ function toggleDeposit(){
   updateBalance();
 }
 
+// ─── SUGGESTED QUOTE (auto-priced from selected equipment) ───────────────
+function renderSuggested(){
+  const box=document.getElementById('sugg-box');if(!box)return;
+  const sub=equipSubtotal(eqQty);
+  const unpriced=Object.keys(eqQty).filter(k=>(eqQty[k]||0)>0&&getPrice(k)<=0);
+  if(sub<=0&&!unpriced.length){box.style.display='none';return;}
+  box.style.display='flex';
+  document.getElementById('sugg-lbl').textContent=T[lang].suggested;
+  document.getElementById('sugg-amt').textContent=money(sub);
+  const bd=document.getElementById('sugg-breakdown');
+  const names=unpriced.map(k=>{const d=itemDef(k);return d?iname(d):k;});
+  bd.textContent=unpriced.length?`⚠ ${T[lang].noPrice}: ${names.join(', ')}`:'';
+  bd.style.color=unpriced.length?'#e67e22':'var(--tlight)';
+  const btn=document.getElementById('sugg-apply');
+  btn.textContent=T[lang].applyBtn;
+  btn.disabled=sub<=0;
+  // auto-fill while the user hasn't manually typed a quote
+  if(!quoteTouched){
+    const qi=document.getElementById('inp-quote');
+    if(qi){qi.value=sub>0?sub.toFixed(2):'';updateBalance();}
+  }
+}
+function applySuggested(){
+  const qi=document.getElementById('inp-quote');
+  if(!qi)return;
+  qi.value=equipSubtotal(eqQty).toFixed(2);
+  quoteTouched=false;
+  updateBalance();
+}
+function renderEditSuggested(){
+  const box=document.getElementById('edit-sugg-box');if(!box)return;
+  const sub=equipSubtotal(editEqQty);
+  const unpriced=Object.keys(editEqQty).filter(k=>(editEqQty[k]||0)>0&&getPrice(k)<=0);
+  if(sub<=0&&!unpriced.length){box.style.display='none';return;}
+  box.style.display='flex';
+  document.getElementById('edit-sugg-lbl').textContent=T[lang].suggested;
+  document.getElementById('edit-sugg-amt').textContent=money(sub);
+  const bd=document.getElementById('edit-sugg-breakdown');
+  const names=unpriced.map(k=>{const d=itemDef(k);return d?iname(d):k;});
+  bd.textContent=unpriced.length?`⚠ ${T[lang].noPrice}: ${names.join(', ')}`:'';
+  bd.style.color=unpriced.length?'#e67e22':'var(--tlight)';
+  const btn=document.getElementById('edit-sugg-apply');
+  btn.textContent=T[lang].applyBtn;
+  btn.disabled=sub<=0;
+}
+function applyEditSuggested(){
+  const qi=document.getElementById('edit-quote');
+  if(!qi)return;
+  qi.value=equipSubtotal(editEqQty).toFixed(2);
+  editQuoteTouched=false;
+  updateEditBalance();
+}
+
+// ─── DELIVERY FEE ────────────────────────────────────────────────────────
+function toggleDelivery(){
+  deliveryEnabled=!deliveryEnabled;
+  document.getElementById('deliv-check').className='acc-check'+(deliveryEnabled?' checked':'');
+  document.getElementById('deliv-amount-wrap').style.display=deliveryEnabled?'flex':'none';
+  updateBalance();
+}
+function toggleEditDelivery(){
+  editDeliveryEnabled=!editDeliveryEnabled;
+  document.getElementById('edit-deliv-check').className='acc-check'+(editDeliveryEnabled?' checked':'');
+  document.getElementById('edit-deliv-amount-wrap').style.display=editDeliveryEnabled?'flex':'none';
+  updateEditBalance();
+}
+
 function updateBalance(){
   const quote=parseFloat(document.getElementById('inp-quote')?.value)||0;
+  const deliv=deliveryEnabled?(parseFloat(document.getElementById('inp-delivery')?.value)||0):0;
+  const total=quote+deliv;
   const deposit=depositEnabled?(parseFloat(document.getElementById('inp-deposit')?.value)||0):0;
-  const balance=Math.max(0,quote-deposit);
+  const balance=Math.max(0,total-deposit);
   const box=document.getElementById('balance-box');
   const lbl=document.getElementById('balance-lbl');
   const amt=document.getElementById('balance-amt');
+  const dl=document.getElementById('lbl-deliv-chk');if(dl)dl.textContent=T[lang].delivChk;
+  const qh=document.getElementById('lbl-quote-hint');if(qh)qh.textContent=T[lang].equipLbl;
   if(!box)return;
-  if(quote<=0){box.style.display='none';return;}
+  if(total<=0){box.style.display='none';return;}
   box.style.display='flex';
   if(balance===0){
     box.style.background='rgba(39,174,96,0.12)';
@@ -1611,12 +2129,12 @@ function updateBalance(){
   } else if(deposit>0){
     box.style.background='rgba(243,156,18,0.12)';
     box.style.border='1.5px solid rgba(243,156,18,0.3)';
-    if(lbl){lbl.style.color='#f39c12';lbl.textContent=lang==='en'?'Balance due':'Saldo pendiente';}
+    if(lbl){lbl.style.color='#f39c12';lbl.textContent=(lang==='en'?'Balance due':'Saldo pendiente')+(deliv>0?` (${T[lang].totalLbl} ${money(total)})`:'');}
     if(amt){amt.style.color='#f39c12';amt.textContent='$'+balance.toFixed(2);}
   } else {
     box.style.background='rgba(231,76,60,0.08)';
     box.style.border='1.5px solid rgba(231,76,60,0.2)';
-    if(lbl){lbl.style.color='#e74c3c';lbl.textContent=lang==='en'?'No deposit yet':'Sin depósito';}
+    if(lbl){lbl.style.color='#e74c3c';lbl.textContent=(lang==='en'?'No deposit yet':'Sin depósito')+(deliv>0?` (+${money(deliv)} ${T[lang].delivLbl.toLowerCase()})`:'');}
     if(amt){amt.style.color='#e74c3c';amt.textContent='$'+balance.toFixed(2);}
   }
 }
@@ -1634,13 +2152,16 @@ function toggleEditDeposit(){
 
 function updateEditBalance(){
   const quote=parseFloat(document.getElementById('edit-quote')?.value)||0;
+  const deliv=editDeliveryEnabled?(parseFloat(document.getElementById('edit-delivery')?.value)||0):0;
+  const total=quote+deliv;
   const deposit=editDepositEnabled?(parseFloat(document.getElementById('edit-deposit')?.value)||0):0;
-  const balance=Math.max(0,quote-deposit);
+  const balance=Math.max(0,total-deposit);
   const box=document.getElementById('edit-balance-box');
   const lbl=document.getElementById('edit-balance-lbl');
   const amt=document.getElementById('edit-balance-amt');
+  const dl=document.getElementById('edit-lbl-deliv-chk');if(dl)dl.textContent=T[lang].delivChk;
   if(!box)return;
-  if(quote<=0){box.style.display='none';return;}
+  if(total<=0){box.style.display='none';return;}
   box.style.display='flex';
   if(balance===0){
     box.style.background='rgba(39,174,96,0.12)';box.style.border='1.5px solid rgba(39,174,96,0.3)';
@@ -1931,8 +2452,8 @@ function openDelivery(id){
   const r=rentals.find(x=>x.id===id);if(!r)return;
   document.getElementById('delivery-id').value=id;
   document.getElementById('delivery-name').textContent=r.name;
-  const balance=Math.max(0,(r.quote||0)-((r.depositEnabled?r.depositAmt:0)||0));
-  document.getElementById('delivery-sub').textContent=fmtDate(r.date)+(balance>0?` · ${lang==='en'?'Balance due':'Saldo'}: $${balance.toFixed(2)}`:'');
+  const balance=rentalBalance(r);
+  document.getElementById('delivery-sub').textContent=fmtDate(r.date)+(balance>0?` · ${lang==='en'?'Balance due':'Saldo'}: ${money(balance)}`:'');
   document.getElementById('delivery-amt').value=balance>0?balance.toFixed(2):'';
   document.getElementById('delivery-overlay').style.display='flex';
 }
@@ -1975,7 +2496,8 @@ async function syncDeliveryToBookkeeper(rental,amtPaid){
       date:rental.deliveredAt||new Date().toISOString().split('T')[0],
       rentalType,
       customer:rental.name,
-      amount:rental.quote||amtPaid,
+      amount:rentalTotal(rental)||amtPaid,
+      deliveryFee:parseFloat(rental.deliveryFee)||0,
       hasDeposit:rental.depositEnabled||false,
       depositAmt:rental.depositAmt||0,
       status:'collected',
